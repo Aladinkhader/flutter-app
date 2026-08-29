@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import 'main_shell.dart';
 
@@ -74,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Text(
                     'الشيخ د. محمد الأمين إسماعيل',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.tajawal(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: AppColors.mainText,
