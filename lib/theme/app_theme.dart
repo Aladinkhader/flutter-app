@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTheme {
   AppTheme._();
 
   static ThemeData get darkTheme {
-    final baseTextTheme = GoogleFonts.tajawalTextTheme(
-      ThemeData.dark().textTheme,
-    );
-
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -21,14 +16,14 @@ class AppTheme {
         surface: AppColors.cardDark,
         onPrimary: AppColors.background,
       ),
-      textTheme: baseTextTheme.apply(
+      textTheme: ThemeData.dark().textTheme.apply(
         bodyColor: AppColors.mainText,
         displayColor: AppColors.mainText,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background.withOpacity(0.95),
         elevation: 0,
-        titleTextStyle: GoogleFonts.tajawal(
+        titleTextStyle: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.bold,
           color: AppColors.mainText,
