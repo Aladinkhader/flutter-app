@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../services/audio_player_service.dart';
 import 'home_tab.dart';
 import 'placeholder_tab.dart';
-import 'full_player.dart';
 import 'all_lectures_tab.dart';
 import 'categories_tab.dart';
 import 'favorites_tab.dart';
+import 'full_player.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -40,12 +41,31 @@ class _MainShellState extends State<MainShell> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(66),
+          preferredSize: const Size.fromHeight(74),
           child: _TopHeader(pageTitle: _titles[_currentIndex]),
         ),
         body: SafeArea(
           top: false,
-          child: _tabs[_currentIndex],
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 280),
+            transitionBuilder: (child, animation) {
+              final offsetAnimation = Tween<Offset>(
+                begin: const Offset(0, 0.03),
+                end: Offset.zero,
+              ).animate(animation);
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: offsetAnimation,
+                  child: child,
+                ),
+              );
+            },
+            child: Container(
+              key: ValueKey<int>(_currentIndex),
+              child: _tabs[_currentIndex],
+            ),
+          ),
         ),
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
@@ -112,6 +132,13 @@ class _MiniPlayer extends StatelessWidget {
                   color: AppColors.primaryTeal.withOpacity(0.4),
                 ),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, -3),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -138,7 +165,7 @@ class _MiniPlayer extends StatelessWidget {
                         lecture.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: GoogleFonts.tajawal(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: AppColors.mainText,
@@ -146,7 +173,7 @@ class _MiniPlayer extends StatelessWidget {
                       ),
                       Text(
                         lecture.section,
-                        style: TextStyle(
+                        style: GoogleFonts.tajawal(
                           fontSize: 10,
                           color: AppColors.secondaryText.withOpacity(0.8),
                         ),
@@ -187,16 +214,23 @@ class _TopHeader extends StatelessWidget {
             color: AppColors.cardGradientStart.withOpacity(0.4),
           ),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.cardDark,
@@ -206,7 +240,7 @@ class _TopHeader extends StatelessWidget {
                 ),
                 child: Icon(
                   Icons.person,
-                  size: 20,
+                  size: 22,
                   color: AppColors.primaryTeal.withOpacity(0.7),
                 ),
               ),
@@ -216,15 +250,15 @@ class _TopHeader extends StatelessWidget {
                 children: [
                   Text(
                     'الشيخ د. محمد الأمين إسماعيل',
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: GoogleFonts.tajawal(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppColors.mainText,
                     ),
                   ),
                   Text(
                     pageTitle,
-                    style: TextStyle(
+                    style: GoogleFonts.tajawal(
                       fontSize: 11,
                       color: AppColors.secondaryText,
                     ),
