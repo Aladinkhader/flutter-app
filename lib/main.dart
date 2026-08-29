@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
+          child: Text(
+            'خطأ:\n${details.exceptionAsString()}',
+            style: const TextStyle(color: Colors.red, fontSize: 12),
+          ),
+        ),
+      ),
+    );
+  };
 
   runApp(const SheikhApp());
 }
@@ -22,8 +32,6 @@ class SheikhApp extends StatelessWidget {
       title: 'الشيخ د. محمد الأمين إسماعيل',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      locale: const Locale('ar'),
-      supportedLocales: const [Locale('ar')],
       home: const SplashScreen(),
     );
   }
