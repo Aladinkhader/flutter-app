@@ -1,9 +1,12 @@
+
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/lecture.dart';
 import '../services/archive_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/favorites_service.dart';
+import '../widgets/shimmer_lecture_card.dart';
+import 'full_player.dart';
 
 class SectionLecturesScreen extends StatefulWidget {
   final String identifier;
@@ -50,6 +53,14 @@ class _SectionLecturesScreenState extends State<SectionLecturesScreen> {
     }
   }
 
+  void _openLecture(Lecture lecture) {
+    AudioPlayerService.instance
+        .playLecture(lecture, queue: _lectures ?? [lecture]);
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const FullPlayerScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -87,14 +98,10 @@ class _SectionLecturesScreenState extends State<SectionLecturesScreen> {
     if (_loading) {
       return ListView(
         children: List.generate(
-          5,
-          (i) => Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            height: 60,
-            decoration: BoxDecoration(
-              color: AppColors.cardDark,
-              borderRadius: BorderRadius.circular(14),
-            ),
+          6,
+          (i) => const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: ShimmerLectureCard(),
           ),
         ),
       );
@@ -128,16 +135,27 @@ class _SectionLecturesScreenState extends State<SectionLecturesScreen> {
         final lecture = _lectures![index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: _LectureRow(lecture: lecture),
+          child: _LectureRow(
+            lecture: lecture,
+            onTap: () => _openLecture(lecture),
+          ),
         );
       },
     );
   }
 }
 
-class _LectureRow extends StatelessWidget {
+class _LectureRow extends StatefulWidget {
   final Lecture lecture;
-  const _LectureRow({required this.lecture});
+  final VoidCallback onTap;
+  const _LectureRow({required this.lecture, required this.onTap});
+
+  @override
+  State<_LectureRow> createState() => _LectureRowState();
+}
+
+class _LectureRowState extends State<_LectureRow> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -147,61 +165,74 @@ class _LectureRow extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([audioService, favoritesService]),
       builder: (context, _) {
-        final isThisPlaying =
-            audioService.currentLecture?.audioUrl == lecture.audioUrl &&
-                audioService.isPlaying;
-        final isFav = favoritesService.isFavorite(lecture);
+        final isThisPlaying = audioService.currentLecture?.audioUrl ==
+                widget.lecture.audioUrl &&
+            audioService.isPlaying;
+        final isFav = favoritesService.isFavorite(widget.lecture);
 
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.cardDark,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isThisPlaying
-                  ? AppColors.primaryTeal
-                  : AppColors.cardGradientStart.withOpacity(0.5),
-            ),
-          ),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () => audioService.playLecture(lecture),
-                child: Icon(
-                  isThisPlaying
-                      ? Icons.pause_circle_outline
-                      : Icons.play_circle_outline,
-                  color: AppColors.primaryTeal,
-                  size: 26,
+        return GestureDetector(
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTap: widget.onTap,
+          child: AnimatedScale(
+            scale: _pressed ? 0.97 : 1.0,
+            duration: const Duration(milliseconds: 120),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.cardDark,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isThisPlaying
+                      ? AppColors.primaryTeal
+                      : AppColors.cardGradientStart.withOpacity(0.5),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(_pressed ? 0.1 : 0.2),
+                    blurRadius: _pressed ? 4 : 8,
+                    offset: Offset(0, _pressed ? 1 : 3),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => audioService.playLecture(lecture),
-                  child: Text(
-                    lecture.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.mainText,
+              child: Row(
+                children: [
+                  Icon(
+                    isThisPlaying
+                        ? Icons.pause_circle_outline
+                        : Icons.play_circle_outline,
+                    color: AppColors.primaryTeal,
+                    size: 26,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      widget.lecture.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.mainText,
+                      ),
                     ),
                   ),
-                ),
+                  GestureDetector(
+                    onTap: () =>
+                        favoritesService.toggleFavorite(widget.lecture),
+                    child: Icon(
+                      isFav ? Icons.bookmark : Icons.bookmark_border,
+                      color: isFav
+                          ? AppColors.primaryTeal
+                          : AppColors.secondaryText.withOpacity(0.7),
+                      size: 20,
+                    ),
+                  ),
+                ],
               ),
-              GestureDetector(
-                onTap: () => favoritesService.toggleFavorite(lecture),
-                child: Icon(
-                  isFav ? Icons.bookmark : Icons.bookmark_border,
-                  color: isFav
-                      ? AppColors.primaryTeal
-                      : AppColors.secondaryText.withOpacity(0.7),
-                  size: 20,
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
