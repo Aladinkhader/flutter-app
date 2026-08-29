@@ -5,6 +5,8 @@ import '../models/lecture.dart';
 class AudioPlayerService extends ChangeNotifier {
   AudioPlayerService._internal() {
     _player.playerStateStream.listen((_) => notifyListeners());
+    _player.positionStream.listen((_) => notifyListeners());
+    _player.durationStream.listen((_) => notifyListeners());
   }
 
   static final AudioPlayerService instance = AudioPlayerService._internal();
@@ -14,6 +16,8 @@ class AudioPlayerService extends ChangeNotifier {
 
   Lecture? get currentLecture => _currentLecture;
   bool get isPlaying => _player.playing;
+  Duration get position => _player.position;
+  Duration get duration => _player.duration ?? Duration.zero;
   AudioPlayer get player => _player;
 
   Future<void> playLecture(Lecture lecture) async {
@@ -38,5 +42,19 @@ class AudioPlayerService extends ChangeNotifier {
     } else {
       await _player.play();
     }
+  }
+
+  Future<void> seek(Duration position) async {
+    await _player.seek(position);
+  }
+
+  Future<void> skipForward() async {
+    final newPosition = position + const Duration(seconds: 10);
+    await _player.seek(newPosition > duration ? duration : newPosition);
+  }
+
+  Future<void> skipBackward() async {
+    final newPosition = position - const Duration(seconds: 10);
+    await _player.seek(newPosition < Duration.zero ? Duration.zero : newPosition);
   }
 }
