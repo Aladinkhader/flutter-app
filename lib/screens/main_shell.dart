@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../services/audio_player_service.dart';
 import 'home_tab.dart';
 import 'placeholder_tab.dart';
 
@@ -23,9 +24,9 @@ class _MainShellState extends State<MainShell> {
 
   final List<Widget> _tabs = const [
     HomeTab(),
-    PlaceholderTab(label: 'جميع المحاضرات — قريبًا (المرحلة 2)'),
-    PlaceholderTab(label: 'الأقسام العلمية — قريبًا (المرحلة 2)'),
-    PlaceholderTab(label: 'التنزيلات والمفضلة — قريبًا (المرحلة 5-6)'),
+    PlaceholderTab(label: 'جميع المحاضرات — قريبًا (المرحلة 3)'),
+    PlaceholderTab(label: 'الأقسام العلمية — قريبًا (المرحلة 3)'),
+    PlaceholderTab(label: 'التنزيلات والمفضلة — قريبًا'),
     PlaceholderTab(label: 'الإعدادات — قريبًا'),
   ];
 
@@ -42,33 +43,120 @@ class _MainShellState extends State<MainShell> {
           top: false,
           child: _tabs[_currentIndex],
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (i) => setState(() => _currentIndex = i),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              label: 'الرئيسية',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.library_music_rounded),
-              label: 'المحاضرات',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.folder_rounded),
-              label: 'الأقسام',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.download_rounded),
-              label: 'التنزيلات',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings_rounded),
-              label: 'الإعدادات',
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const _MiniPlayer(),
+            BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: (i) => setState(() => _currentIndex = i),
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_rounded),
+                  label: 'الرئيسية',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.library_music_rounded),
+                  label: 'المحاضرات',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.folder_rounded),
+                  label: 'الأقسام',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.download_rounded),
+                  label: 'التنزيلات',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.settings_rounded),
+                  label: 'الإعدادات',
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MiniPlayer extends StatelessWidget {
+  const _MiniPlayer();
+
+  @override
+  Widget build(BuildContext context) {
+    final audioService = AudioPlayerService.instance;
+
+    return AnimatedBuilder(
+      animation: audioService,
+      builder: (context, _) {
+        final lecture = audioService.currentLecture;
+        if (lecture == null) return const SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.cardDark,
+            border: Border(
+              top: BorderSide(
+                color: AppColors.primaryTeal.withOpacity(0.4),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.background,
+                  border: Border.all(
+                    color: AppColors.primaryTeal.withOpacity(0.5),
+                  ),
+                ),
+                child: Icon(Icons.person,
+                    size: 18, color: AppColors.primaryTeal.withOpacity(0.7)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lecture.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.mainText,
+                      ),
+                    ),
+                    Text(
+                      lecture.section,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppColors.secondaryText.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => audioService.togglePlayPause(),
+                icon: Icon(
+                  audioService.isPlaying
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_filled,
+                  color: AppColors.primaryTeal,
+                  size: 32,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
