@@ -11,15 +11,22 @@ class ArchiveService {
 
   static Future<List<Lecture>> fetchAllLectures() async {
     final List<Lecture> all = [];
+    final List<String> errors = [];
+
     for (final entry in sections.entries) {
       try {
         final sectionLectures =
             await fetchSectionLectures(entry.key, entry.value);
         all.addAll(sectionLectures);
-      } catch (_) {
-        // نتجاهل القسم اللي فشل تحميله ونكمل الباقي
+      } catch (e) {
+        errors.add('${entry.value}: $e');
       }
     }
+
+    if (all.isEmpty) {
+      throw Exception(errors.join(' | '));
+    }
+
     return all;
   }
 
@@ -29,7 +36,7 @@ class ArchiveService {
     final response = await http.get(url).timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
-      throw Exception('تعذر الاتصال بالأرشيف');
+      throw Exception('HTTP ${response.statusCode}');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
