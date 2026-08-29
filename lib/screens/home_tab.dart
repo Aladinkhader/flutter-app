@@ -15,7 +15,6 @@ class _HomeTabState extends State<HomeTab> {
   List<Lecture>? _lectures;
   bool _loading = true;
   bool _error = false;
-  String _errorMessage = '';
 
   @override
   void initState() {
@@ -34,11 +33,10 @@ class _HomeTabState extends State<HomeTab> {
         _lectures = lectures;
         _loading = false;
       });
-    } catch (e) {
+    } catch (_) {
       setState(() {
         _error = true;
         _loading = false;
-        _errorMessage = e.toString();
       });
     }
   }
@@ -82,19 +80,31 @@ class _HomeTabState extends State<HomeTab> {
     }
 
     if (_error || _lectures == null || _lectures!.isEmpty) {
-      return Column(
-        children: [
-          Text(
-            'تعذر تحميل المحاضرات\n$_errorMessage',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.secondaryText, fontSize: 11),
-          ),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: _load,
-            child: const Text('إعادة المحاولة'),
-          ),
-        ],
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          children: [
+            Icon(Icons.wifi_off_rounded,
+                color: AppColors.secondaryText.withOpacity(0.6), size: 32),
+            const SizedBox(height: 10),
+            Text(
+              'تعذر الاتصال بالإنترنت',
+              style: TextStyle(color: AppColors.secondaryText, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'تأكد من اتصالك وحاول مرة أخرى',
+              style: TextStyle(
+                  color: AppColors.secondaryText.withOpacity(0.6),
+                  fontSize: 10),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _load,
+              child: const Text('إعادة المحاولة'),
+            ),
+          ],
+        ),
       );
     }
 
