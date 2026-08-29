@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/lecture.dart';
 
 class ArchiveService {
@@ -9,7 +10,34 @@ class ArchiveService {
     'mp-3-160-k_20260814': 'خطب الجمعة',
   };
 
-  static Future<List<Lecture>> fetchAllLectures() async {
+  static const _cacheKey = 'lectures_cache_v1';
+
+  /// يجيب كل المحاضرات: من الكاش فورًا إن وجد، ثم يحدّث من الإنترنت بالخلفية
+  static Future<List<Lecture>> fetchAllLectures({bool forceRefresh = false}) async {
+    if (!forceRefresh) {
+      final cached = await _readCache();
+      if (cached != null && cached.isNotEmpty) {
+        // نحدث بالخلفية من غير ما ننتظر (best effort)
+        _refreshCacheInBackground();
+        return cached;
+      }
+    }
+
+    final fresh = await _fetchFromNetwork();
+    await _writeCache(fresh);
+    return fresh;
+  }
+
+  static Future<void> _refreshCacheInBackground() async {
+    try {
+      final fresh = await _fetchFromNetwork();
+      await _writeCache(fresh);
+    } catch (_) {
+      // تجاهل بهدوء، الكاش القديم يفضل شغال
+    }
+  }
+
+  static Future<List<Lecture>> _fetchFromNetwork() async {
     final List<Lecture> all = [];
     final List<String> errors = [];
 
@@ -59,5 +87,47 @@ class ArchiveService {
       ));
     }
     return lectures;
+  }
+
+  static Future<List<Lecture>?> _readCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cacheKey);
+      if (raw == null) return null;
+      final List<dynamic> list = jsonDecode(raw);
+      return list
+          .map((e) => Lecture(
+                title: e['title'],
+                section: e['section'],
+                audioUrl: e['audioUrl'],
+                identifier: e['identifier'],
+              ))
+          .toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> _writeCache(List<Lecture> lectures) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = jsonEncode(lectures
+          .map((l) => {
+                'title': l.title,
+                'section': l.section,
+                'audioUrl': l.audioUrl,
+                'identifier': l.identifier,
+              })
+          .toList());
+      await prefs.setString(_cacheKey, raw);
+    } catch (_) {
+      // تجاهل بهدوء
+    }
+  }
+
+  /// يمسح الكاش المحفوظ (يستخدم من شاشة الإعدادات لاحقًا)
+  static Future<void> clearCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_cacheKey);
   }
 }
