@@ -48,7 +48,7 @@ class _HomeTabState extends State<HomeTab> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
-        _WelcomeCard(),
+        const _WelcomeCard(),
         const SizedBox(height: 24),
         Text(
           'مختارات من المحاضرات',
@@ -112,6 +112,8 @@ class _HomeTabState extends State<HomeTab> {
 }
 
 class _WelcomeCard extends StatelessWidget {
+  const _WelcomeCard();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -130,6 +132,43 @@ class _WelcomeCard extends StatelessWidget {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'استمع إ
+            'استمع إلى الخُطب والدروس',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.lightText,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LectureCard extends StatelessWidget {
+  final Lecture lecture;
+
+  const _LectureCard({required this.lecture});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardDark,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: ListTile(
+        title: Text(
+          lecture.title,
+          style: TextStyle(color: AppColors.lightText, fontSize: 14),
+        ),
+        onTap: () {
+          AudioPlayerService.play(lecture);
+        },
+      ),
+    );
+  }
+}
