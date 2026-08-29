@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import '../models/lecture.dart';
 import '../services/archive_service.dart';
 import '../services/audio_player_service.dart';
+import '../services/favorites_service.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -180,38 +181,43 @@ class _LectureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final audioService = AudioPlayerService.instance;
+    final favoritesService = FavoritesService.instance;
 
     return AnimatedBuilder(
-      animation: audioService,
+      animation: Listenable.merge([audioService, favoritesService]),
       builder: (context, _) {
         final isThisPlaying = audioService.currentLecture?.audioUrl ==
                 lecture.audioUrl &&
             audioService.isPlaying;
+        final isFav = favoritesService.isFavorite(lecture);
 
-        return GestureDetector(
-          onTap: () => audioService.playLecture(lecture),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.cardDark,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isThisPlaying
-                    ? AppColors.primaryTeal
-                    : AppColors.cardGradientStart.withOpacity(0.5),
-              ),
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.cardDark,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isThisPlaying
+                  ? AppColors.primaryTeal
+                  : AppColors.cardGradientStart.withOpacity(0.5),
             ),
-            child: Row(
-              children: [
-                Icon(
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => audioService.playLecture(lecture),
+                child: Icon(
                   isThisPlaying
                       ? Icons.pause_circle_outline
                       : Icons.play_circle_outline,
                   color: AppColors.primaryTeal,
                   size: 26,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => audioService.playLecture(lecture),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -219,7 +225,7 @@ class _LectureCard extends StatelessWidget {
                         lecture.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: AppColors.mainText,
@@ -235,11 +241,18 @@ class _LectureCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(Icons.bookmark_border,
-                    color: AppColors.secondaryText.withOpacity(0.7),
-                    size: 20),
-              ],
-            ),
+              ),
+              GestureDetector(
+                onTap: () => favoritesService.toggleFavorite(lecture),
+                child: Icon(
+                  isFav ? Icons.bookmark : Icons.bookmark_border,
+                  color: isFav
+                      ? AppColors.primaryTeal
+                      : AppColors.secondaryText.withOpacity(0.7),
+                  size: 20,
+                ),
+              ),
+            ],
           ),
         );
       },
