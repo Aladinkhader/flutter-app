@@ -6,6 +6,7 @@ import 'placeholder_tab.dart';
 import 'full_player.dart';
 import 'all_lectures_tab.dart';
 import 'categories_tab.dart';
+import 'favorites_tab.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -21,7 +22,7 @@ class _MainShellState extends State<MainShell> {
     'الرئيسية',
     'جميع المحاضرات',
     'الأقسام',
-    'التنزيلات والمفضلة',
+    'المفضلة',
     'الإعدادات',
   ];
 
@@ -29,7 +30,7 @@ class _MainShellState extends State<MainShell> {
     HomeTab(),
     AllLecturesTab(),
     CategoriesTab(),
-    PlaceholderTab(label: 'التنزيلات والمفضلة — قريبًا'),
+    FavoritesTab(),
     PlaceholderTab(label: 'الإعدادات — قريبًا'),
   ];
 
@@ -67,8 +68,8 @@ class _MainShellState extends State<MainShell> {
                   label: 'الأقسام',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.download_rounded),
-                  label: 'التنزيلات',
+                  icon: Icon(Icons.bookmark_rounded),
+                  label: 'المفضلة',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.settings_rounded),
