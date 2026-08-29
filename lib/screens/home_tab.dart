@@ -15,6 +15,7 @@ class _HomeTabState extends State<HomeTab> {
   List<Lecture>? _lectures;
   bool _loading = true;
   bool _error = false;
+  String _errorMessage = '';
 
   @override
   void initState() {
@@ -33,10 +34,11 @@ class _HomeTabState extends State<HomeTab> {
         _lectures = lectures;
         _loading = false;
       });
-    } catch (_) {
+    } catch (e) {
       setState(() {
         _error = true;
         _loading = false;
+        _errorMessage = e.toString();
       });
     }
   }
@@ -83,8 +85,9 @@ class _HomeTabState extends State<HomeTab> {
       return Column(
         children: [
           Text(
-            'تعذر تحميل المحاضرات',
-            style: TextStyle(color: AppColors.secondaryText, fontSize: 12),
+            'تعذر تحميل المحاضرات\n$_errorMessage',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.secondaryText, fontSize: 11),
           ),
           const SizedBox(height: 10),
           TextButton(
@@ -129,107 +132,4 @@ class _WelcomeCard extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'استمع إلى أحدث المواعظ والبرامج والخطب العلمية',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.lightText,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTeal,
-              foregroundColor: AppColors.background,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
-            child: const Text(
-              'تصفح كل الأقسام',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LectureCard extends StatelessWidget {
-  final Lecture lecture;
-  const _LectureCard({required this.lecture});
-
-  @override
-  Widget build(BuildContext context) {
-    final audioService = AudioPlayerService.instance;
-
-    return AnimatedBuilder(
-      animation: audioService,
-      builder: (context, _) {
-        final isThisPlaying = audioService.currentLecture?.audioUrl ==
-                lecture.audioUrl &&
-            audioService.isPlaying;
-
-        return GestureDetector(
-          onTap: () => audioService.playLecture(lecture),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.cardDark,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isThisPlaying
-                    ? AppColors.primaryTeal
-                    : AppColors.cardGradientStart.withOpacity(0.5),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  isThisPlaying
-                      ? Icons.pause_circle_outline
-                      : Icons.play_circle_outline,
-                  color: AppColors.primaryTeal,
-                  size: 26,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lecture.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.mainText,
-                        ),
-                      ),
-                      Text(
-                        lecture.section,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.secondaryText.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.bookmark_border,
-                    color: AppColors.secondaryText.withOpacity(0.7),
-                    size: 20),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
+            'استمع إ
