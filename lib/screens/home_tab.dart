@@ -205,26 +205,44 @@ class _LectureCardState extends State<_LectureCard> {
           onTapCancel: () => setState(() => _pressed = false),
           onTap: widget.onTap,
           child: AnimatedScale(
-            scale: _pressed ? 0.97 : 1.0,
-            duration: const Duration(milliseconds: 120),
+            scale: _pressed ? 1.02 : 1.0,
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 150),
+              transform: Matrix4.translationValues(
+                  0, _pressed ? -3 : 0, 0),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.cardDark,
+                color: _pressed
+                    ? const Color(0xFF165652)
+                    : AppColors.cardDark,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isThisPlaying
+                  color: _pressed || isThisPlaying
                       ? AppColors.primaryTeal
                       : AppColors.cardGradientStart.withOpacity(0.5),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(_pressed ? 0.1 : 0.2),
-                    blurRadius: _pressed ? 4 : 8,
-                    offset: Offset(0, _pressed ? 1 : 3),
-                  ),
-                ],
+                boxShadow: _pressed
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                        BoxShadow(
+                          color: AppColors.primaryTeal.withOpacity(0.25),
+                          blurRadius: 15,
+                          spreadRadius: 0,
+                        ),
+                      ]
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
               ),
               child: Row(
                 children: [
