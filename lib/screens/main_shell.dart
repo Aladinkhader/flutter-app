@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import 'home_tab.dart';
 import 'placeholder_tab.dart';
@@ -117,7 +116,7 @@ class _TopHeader extends StatelessWidget {
                 children: [
                   Text(
                     'الشيخ د. محمد الأمين إسماعيل',
-                    style: GoogleFonts.tajawal(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: AppColors.mainText,
@@ -125,7 +124,7 @@ class _TopHeader extends StatelessWidget {
                   ),
                   Text(
                     pageTitle,
-                    style: GoogleFonts.tajawal(
+                    style: TextStyle(
                       fontSize: 11,
                       color: AppColors.secondaryText,
                     ),
