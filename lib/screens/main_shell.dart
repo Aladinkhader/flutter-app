@@ -4,6 +4,8 @@ import '../services/audio_player_service.dart';
 import 'home_tab.dart';
 import 'placeholder_tab.dart';
 import 'full_player.dart';
+import 'all_lectures_tab.dart';
+import 'categories_tab.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -25,8 +27,8 @@ class _MainShellState extends State<MainShell> {
 
   final List<Widget> _tabs = const [
     HomeTab(),
-    PlaceholderTab(label: 'جميع المحاضرات — قريبًا (المرحلة 3)'),
-    PlaceholderTab(label: 'الأقسام العلمية — قريبًا (المرحلة 3)'),
+    AllLecturesTab(),
+    CategoriesTab(),
     PlaceholderTab(label: 'التنزيلات والمفضلة — قريبًا'),
     PlaceholderTab(label: 'الإعدادات — قريبًا'),
   ];
