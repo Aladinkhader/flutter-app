@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import '../services/audio_player_service.dart';
 import 'home_tab.dart';
 import 'placeholder_tab.dart';
+import 'full_player.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -93,67 +94,75 @@ class _MiniPlayer extends StatelessWidget {
         final lecture = audioService.currentLecture;
         if (lecture == null) return const SizedBox.shrink();
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.cardDark,
-            border: Border(
-              top: BorderSide(
-                color: AppColors.primaryTeal.withOpacity(0.4),
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FullPlayerScreen()),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.cardDark,
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.primaryTeal.withOpacity(0.4),
+                ),
               ),
             ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.background,
-                  border: Border.all(
-                    color: AppColors.primaryTeal.withOpacity(0.5),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.background,
+                    border: Border.all(
+                      color: AppColors.primaryTeal.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Icon(Icons.person,
+                      size: 18,
+                      color: AppColors.primaryTeal.withOpacity(0.7)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        lecture.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.mainText,
+                        ),
+                      ),
+                      Text(
+                        lecture.section,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.secondaryText.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Icon(Icons.person,
-                    size: 18, color: AppColors.primaryTeal.withOpacity(0.7)),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      lecture.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.mainText,
-                      ),
-                    ),
-                    Text(
-                      lecture.section,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppColors.secondaryText.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
+                IconButton(
+                  onPressed: () => audioService.togglePlayPause(),
+                  icon: Icon(
+                    audioService.isPlaying
+                        ? Icons.pause_circle_filled
+                        : Icons.play_circle_filled,
+                    color: AppColors.primaryTeal,
+                    size: 32,
+                  ),
                 ),
-              ),
-              IconButton(
-                onPressed: () => audioService.togglePlayPause(),
-                icon: Icon(
-                  audioService.isPlaying
-                      ? Icons.pause_circle_filled
-                      : Icons.play_circle_filled,
-                  color: AppColors.primaryTeal,
-                  size: 32,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
