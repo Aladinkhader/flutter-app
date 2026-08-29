@@ -4,6 +4,8 @@ import '../models/lecture.dart';
 import '../services/archive_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/favorites_service.dart';
+import '../widgets/shimmer_lecture_card.dart';
+import 'full_player.dart';
 
 class AllLecturesTab extends StatefulWidget {
   const AllLecturesTab({super.key});
@@ -62,6 +64,13 @@ class _AllLecturesTabState extends State<AllLecturesTab> {
               l.section.toLowerCase().contains(query))
           .toList();
     });
+  }
+
+  void _openLecture(Lecture lecture) {
+    AudioPlayerService.instance.playLecture(lecture, queue: _filtered);
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const FullPlayerScreen()),
+    );
   }
 
   @override
@@ -141,14 +150,10 @@ class _AllLecturesTabState extends State<AllLecturesTab> {
     if (_loading) {
       return ListView(
         children: List.generate(
-          5,
-          (i) => Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            height: 60,
-            decoration: BoxDecoration(
-              color: AppColors.cardDark,
-              borderRadius: BorderRadius.circular(14),
-            ),
+          6,
+          (i) => const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: ShimmerLectureCard(),
           ),
         ),
       );
@@ -192,16 +197,27 @@ class _AllLecturesTabState extends State<AllLecturesTab> {
         final lecture = _filtered[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: _LectureRow(lecture: lecture),
+          child: _LectureRow(
+            lecture: lecture,
+            onTap: () => _openLecture(lecture),
+          ),
         );
       },
     );
   }
 }
 
-class _LectureRow extends StatelessWidget {
+class _LectureRow extends StatefulWidget {
   final Lecture lecture;
-  const _LectureRow({required this.lecture});
+  final VoidCallback onTap;
+  const _LectureRow({required this.lecture, required this.onTap});
+
+  @override
+  State<_LectureRow> createState() => _LectureRowState();
+}
+
+class _LectureRowState extends State<_LectureRow> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -211,73 +227,86 @@ class _LectureRow extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([audioService, favoritesService]),
       builder: (context, _) {
-        final isThisPlaying =
-            audioService.currentLecture?.audioUrl == lecture.audioUrl &&
-                audioService.isPlaying;
-        final isFav = favoritesService.isFavorite(lecture);
+        final isThisPlaying = audioService.currentLecture?.audioUrl ==
+                widget.lecture.audioUrl &&
+            audioService.isPlaying;
+        final isFav = favoritesService.isFavorite(widget.lecture);
 
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.cardDark,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isThisPlaying
-                  ? AppColors.primaryTeal
-                  : AppColors.cardGradientStart.withOpacity(0.5),
-            ),
-          ),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () => audioService.playLecture(lecture),
-                child: Icon(
-                  isThisPlaying
-                      ? Icons.pause_circle_outline
-                      : Icons.play_circle_outline,
-                  color: AppColors.primaryTeal,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => audioService.playLecture(lecture),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lecture.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.mainText,
-                        ),
-                      ),
-                      Text(
-                        lecture.section,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.secondaryText.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () => favoritesService.toggleFavorite(lecture),
-                child: Icon(
-                  isFav ? Icons.bookmark : Icons.bookmark_border,
-                  color: isFav
+        return GestureDetector(
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapUp: (_) => setState(() => _pressed = false),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTap: widget.onTap,
+          child: AnimatedScale(
+            scale: _pressed ? 0.97 : 1.0,
+            duration: const Duration(milliseconds: 120),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.cardDark,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isThisPlaying
                       ? AppColors.primaryTeal
-                      : AppColors.secondaryText.withOpacity(0.7),
-                  size: 20,
+                      : AppColors.cardGradientStart.withOpacity(0.5),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(_pressed ? 0.1 : 0.2),
+                    blurRadius: _pressed ? 4 : 8,
+                    offset: Offset(0, _pressed ? 1 : 3),
+                  ),
+                ],
               ),
-            ],
+              child: Row(
+                children: [
+                  Icon(
+                    isThisPlaying
+                        ? Icons.pause_circle_outline
+                        : Icons.play_circle_outline,
+                    color: AppColors.primaryTeal,
+                    size: 26,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.lecture.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.mainText,
+                          ),
+                        ),
+                        Text(
+                          widget.lecture.section,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.secondaryText.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () =>
+                        favoritesService.toggleFavorite(widget.lecture),
+                    child: Icon(
+                      isFav ? Icons.bookmark : Icons.bookmark_border,
+                      color: isFav
+                          ? AppColors.primaryTeal
+                          : AppColors.secondaryText.withOpacity(0.7),
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
