@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 
 class HomeTab extends StatelessWidget {
@@ -14,7 +13,7 @@ class HomeTab extends StatelessWidget {
         const SizedBox(height: 24),
         Text(
           'مختارات من المحاضرات',
-          style: GoogleFonts.tajawal(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.bold,
             color: AppColors.lightText,
@@ -52,7 +51,7 @@ class _WelcomeCard extends StatelessWidget {
           Text(
             'استمع إلى أحدث المواعظ والبرامج والخطب العلمية',
             textAlign: TextAlign.center,
-            style: GoogleFonts.tajawal(
+            style: TextStyle(
               fontSize: 12,
               color: AppColors.lightText,
               fontWeight: FontWeight.w500,
@@ -71,7 +70,7 @@ class _WelcomeCard extends StatelessWidget {
             ),
             child: Text(
               'تصفح كل الأقسام',
-              style: GoogleFonts.tajawal(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -107,7 +106,7 @@ class _LectureCardPlaceholder extends StatelessWidget {
                   'اسم المحاضرة (بيانات حقيقية بالمرحلة 2)',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.tajawal(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppColors.mainText,
@@ -115,7 +114,7 @@ class _LectureCardPlaceholder extends StatelessWidget {
                 ),
                 Text(
                   'اسم القسم',
-                  style: GoogleFonts.tajawal(
+                  style: TextStyle(
                     fontSize: 10,
                     color: AppColors.secondaryText.withOpacity(0.8),
                   ),
