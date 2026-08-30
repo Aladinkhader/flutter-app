@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/lecture.dart';
 
-class AudioPlayerService extends ChangeNotifier {
-  AudioPlayerService._internal() {
-    _player.playerStateStream.listen((_) => notifyListeners());
-    _player.positionStream.listen((_) => notifyListeners());
-    _player.durationStream.listen((_) => notifyListeners());
+class AudioPlayerHandler extends BaseAudioHandler {
+  final AudioPlayer _player = AudioPlayer();
+  Lecture? _currentLecture;
+  List<Lecture> _queue = [];
+  bool _repeat = false;
 
+  AudioPlayerHandler() {
+    _player.playbackEventStream.listen(_broadcastState);
     _player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
         if (_repeat) {
@@ -20,13 +23,6 @@ class AudioPlayerService extends ChangeNotifier {
     });
   }
 
-  static final AudioPlayerService instance = AudioPlayerService._internal();
-
-  final AudioPlayer _player = AudioPlayer();
-  Lecture? _currentLecture;
-  List<Lecture> _queue = [];
-  bool _repeat = false;
-
   Lecture? get currentLecture => _currentLecture;
   bool get isPlaying => _player.playing;
   bool get isRepeat => _repeat;
@@ -34,7 +30,33 @@ class AudioPlayerService extends ChangeNotifier {
   Duration get duration => _player.duration ?? Duration.zero;
   AudioPlayer get player => _player;
 
-  /// يشغل محاضرة، مع تحديد قائمة (Queue) اختيارية عشان يقدر يشغل "التالي"
+  void _broadcastState(PlaybackEvent event) {
+    playbackState.add(playbackState.value.copyWith(
+      controls: [
+        MediaControl.skipToPrevious,
+        _player.playing ? MediaControl.pause : MediaControl.play,
+        MediaControl.stop,
+        MediaControl.skipToNext,
+      ],
+      systemActions: const {
+        MediaAction.seek,
+        MediaAction.seekForward,
+        MediaAction.seekBackward,
+      },
+      androidCompactActionIndices: const [0, 1, 3],
+      processingState: const {
+        ProcessingState.idle: AudioProcessingState.idle,
+        ProcessingState.loading: AudioProcessingState.loading,
+        ProcessingState.buffering: AudioProcessingState.buffering,
+        ProcessingState.ready: AudioProcessingState.ready,
+        ProcessingState.completed: AudioProcessingState.completed,
+      }[_player.processingState]!,
+      playing: _player.playing,
+      updatePosition: _player.position,
+      speed: _player.speed,
+    ));
+  }
+
   Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
     if (queue != null) {
       _queue = queue;
@@ -46,25 +68,52 @@ class AudioPlayerService extends ChangeNotifier {
     }
     _currentLecture = lecture;
     notifyListeners();
+
+    mediaItem.add(MediaItem(
+      id: lecture.audioUrl,
+      title: lecture.title,
+      artist: lecture.section,
+      album: 'الشيخ د. محمد الأمين إسماعيل',
+    ));
+
     try {
       await _player.setUrl(lecture.audioUrl);
       await _player.play();
-    } catch (_) {
-      // ممكن نعرض توست خطأ هنا لاحقًا
-    }
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  @override
+  Future<void> play() async {
+    await _player.play();
+    notifyListeners();
+  }
+
+  @override
+  Future<void> pause() async {
+    await _player.pause();
     notifyListeners();
   }
 
   Future<void> togglePlayPause() async {
     if (_player.playing) {
-      await _player.pause();
+      await pause();
     } else {
-      await _player.play();
+      await play();
     }
   }
 
+  @override
   Future<void> seek(Duration position) async {
     await _player.seek(position);
+  }
+
+  @override
+  Future<void> stop() async {
+    await _player.stop();
+    _currentLecture = null;
+    notifyListeners();
+    await super.stop();
   }
 
   Future<void> skipForward() async {
@@ -74,7 +123,8 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> skipBackward() async {
     final newPosition = position - const Duration(seconds: 10);
-    await _player.seek(newPosition < Duration.zero ? Duration.zero : newPosition);
+    await _player
+        .seek(newPosition < Duration.zero ? Duration.zero : newPosition);
   }
 
   void toggleRepeat() {
@@ -84,39 +134,83 @@ class AudioPlayerService extends ChangeNotifier {
 
   bool get hasNext {
     if (_currentLecture == null || _queue.isEmpty) return false;
-    final index = _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    final index =
+        _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
     return index != -1 && index < _queue.length - 1;
   }
 
   bool get hasPrevious {
     if (_currentLecture == null || _queue.isEmpty) return false;
-    final index = _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    final index =
+        _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
     return index > 0;
   }
 
+  @override
+  Future<void> skipToNext() => playNext();
+
+  @override
+  Future<void> skipToPrevious() => playPrevious();
+
   Future<void> playNext() async {
     if (!hasNext) return;
-    final index = _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    final index =
+        _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
     final next = _queue[index + 1];
-    _currentLecture = next;
-    notifyListeners();
-    try {
-      await _player.setUrl(next.audioUrl);
-      await _player.play();
-    } catch (_) {}
-    notifyListeners();
+    await playLecture(next, queue: _queue);
   }
 
   Future<void> playPrevious() async {
     if (!hasPrevious) return;
-    final index = _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    final index =
+        _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
     final prev = _queue[index - 1];
-    _currentLecture = prev;
-    notifyListeners();
-    try {
-      await _player.setUrl(prev.audioUrl);
-      await _player.play();
-    } catch (_) {}
-    notifyListeners();
+    await playLecture(prev, queue: _queue);
   }
+
+  // نستخدم ChangeNotifier يدويًا عشان باقي التطبيق يقدر يستمع للتغييرات
+  final List<VoidCallback> _listeners = [];
+
+  void addListener(VoidCallback listener) => _listeners.add(listener);
+  void removeListener(VoidCallback listener) => _listeners.remove(listener);
+  void notifyListeners() {
+    for (final l in _listeners) {
+      l();
+    }
+  }
+}
+
+/// Wrapper بسيط يحافظ على نفس الواجهة (API) القديمة يلي باقي الشاشات بتستخدمها
+class AudioPlayerService extends ChangeNotifier {
+  AudioPlayerService._internal();
+  static final AudioPlayerService instance = AudioPlayerService._internal();
+
+  late AudioPlayerHandler _handler;
+  bool _initialized = false;
+
+  Future<void> init(AudioPlayerHandler handler) async {
+    _handler = handler;
+    _handler.addListener(notifyListeners);
+    _initialized = true;
+  }
+
+  bool get isInitialized => _initialized;
+
+  Lecture? get currentLecture => _initialized ? _handler.currentLecture : null;
+  bool get isPlaying => _initialized ? _handler.isPlaying : false;
+  bool get isRepeat => _initialized ? _handler.isRepeat : false;
+  Duration get position => _initialized ? _handler.position : Duration.zero;
+  Duration get duration => _initialized ? _handler.duration : Duration.zero;
+  bool get hasNext => _initialized ? _handler.hasNext : false;
+  bool get hasPrevious => _initialized ? _handler.hasPrevious : false;
+
+  Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) =>
+      _handler.playLecture(lecture, queue: queue);
+  Future<void> togglePlayPause() => _handler.togglePlayPause();
+  Future<void> seek(Duration position) => _handler.seek(position);
+  Future<void> skipForward() => _handler.skipForward();
+  Future<void> skipBackward() => _handler.skipBackward();
+  void toggleRepeat() => _handler.toggleRepeat();
+  Future<void> playNext() => _handler.playNext();
+  Future<void> playPrevious() => _handler.playPrevious();
 }
