@@ -29,11 +29,11 @@ class _SettingsTabState extends State<SettingsTab> {
         ),
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: AppColors.primaryTeal, size: 18),
+            Icon(Icons.check_circle, color: AppColors.primaryTeal, size: 20),
             const SizedBox(width: 8),
             const Text(
               'تم محو الذاكرة المؤقتة',
-              style: TextStyle(color: AppColors.mainText, fontSize: 12),
+              style: TextStyle(color: AppColors.mainText, fontSize: 13),
             ),
           ],
         ),
@@ -50,8 +50,8 @@ class _SettingsTabState extends State<SettingsTab> {
       children: [
         Center(
           child: Container(
-            width: 140,
-            height: 140,
+            width: 150,
+            height: 150,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.cardDark,
@@ -66,10 +66,10 @@ class _SettingsTabState extends State<SettingsTab> {
               ],
             ),
             child: Icon(Icons.person,
-                size: 60, color: AppColors.primaryTeal.withOpacity(0.6)),
+                size: 64, color: AppColors.primaryTeal.withOpacity(0.6)),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
 
         // من هو الشيخ
         _SettingsCard(
@@ -79,12 +79,12 @@ class _SettingsTabState extends State<SettingsTab> {
             onTap: () => showSheikhBioDialog(context),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
 
         // محو الكاش
         _SettingsCard(
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Expanded(
@@ -95,49 +95,49 @@ class _SettingsTabState extends State<SettingsTab> {
                         'محو ذاكرة التخزين المؤقت',
                         style: TextStyle(
                           color: AppColors.mainText,
-                          fontSize: 12,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         'لفتح أسرع حتى مع ضعف الإنترنت، يحتفظ التطبيق بآخر نسخة من المحاضرات. امسحها فقط إذا أضيفت محاضرات جديدة ولم تظهر بعد.',
                         style: TextStyle(
                           color: AppColors.secondaryText.withOpacity(0.8),
-                          fontSize: 10.5,
-                          height: 1.5,
+                          fontSize: 12,
+                          height: 1.6,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 GestureDetector(
                   onTap: _clearing ? null : _clearCache,
                   child: Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: AppColors.background,
                       shape: BoxShape.circle,
                     ),
                     child: _clearing
                         ? SizedBox(
-                            width: 18,
-                            height: 18,
+                            width: 22,
+                            height: 22,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                              strokeWidth: 2.5,
                               color: AppColors.primaryTeal,
                             ),
                           )
                         : Icon(Icons.delete_sweep_outlined,
-                            color: AppColors.primaryTeal, size: 20),
+                            color: AppColors.primaryTeal, size: 26),
                   ),
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
 
         // الإحصائيات
         Row(
@@ -151,14 +151,14 @@ class _SettingsTabState extends State<SettingsTab> {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: _StatCard(label: 'التنزيلات', value: '0'),
             ),
           ],
         ),
 
-        const SizedBox(height: 32),
+        const SizedBox(height: 36),
 
         Center(
           child: Column(
@@ -167,31 +167,31 @@ class _SettingsTabState extends State<SettingsTab> {
                 'تطوير',
                 style: TextStyle(
                   color: AppColors.mainText,
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 'علاء الدين خضر',
                 style: TextStyle(
                   color: AppColors.mainText,
-                  fontSize: 22,
+                  fontSize: 26,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               Text(
                 'تواصل معي',
                 style: TextStyle(
                   color: AppColors.secondaryText,
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -199,7 +199,7 @@ class _SettingsTabState extends State<SettingsTab> {
                     icon: Icons.chat,
                     color: const Color(0xFF25D366),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 18),
                   _SocialButton(
                     icon: Icons.facebook,
                     color: const Color(0xFF1877F2),
@@ -266,7 +266,7 @@ class _SettingsItemState extends State<_SettingsItem> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         color: _pressed ? const Color(0xFF165652) : Colors.transparent,
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Expanded(
@@ -274,11 +274,11 @@ class _SettingsItemState extends State<_SettingsItem> {
                 widget.title,
                 style: const TextStyle(
                   color: AppColors.mainText,
-                  fontSize: 12,
+                  fontSize: 14,
                 ),
               ),
             ),
-            Icon(widget.icon, color: AppColors.primaryTeal, size: 18),
+            Icon(widget.icon, color: AppColors.primaryTeal, size: 22),
           ],
         ),
       ),
@@ -294,7 +294,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 18),
       decoration: BoxDecoration(
         color: AppColors.cardDark,
         borderRadius: BorderRadius.circular(16),
@@ -304,14 +304,14 @@ class _StatCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(color: AppColors.secondaryText, fontSize: 10),
+            style: TextStyle(color: AppColors.secondaryText, fontSize: 12),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             value,
             style: const TextStyle(
               color: AppColors.mainText,
-              fontSize: 20,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -329,14 +329,14 @@ class _SocialButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 42,
-      height: 42,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color.withOpacity(0.1),
         border: Border.all(color: color.withOpacity(0.4)),
       ),
-      child: Icon(icon, color: color, size: 20),
+      child: Icon(icon, color: color, size: 24),
     );
   }
 }
