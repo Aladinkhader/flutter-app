@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../services/audio_player_service.dart';
+import '../widgets/pulsing_border.dart';
 import 'home_tab.dart';
 import 'all_lectures_tab.dart';
 import 'categories_tab.dart';
@@ -181,14 +182,17 @@ class _MiniPlayer extends StatelessWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  onPressed: () => audioService.togglePlayPause(),
-                  icon: Icon(
-                    audioService.isPlaying
-                        ? Icons.pause_circle_filled
-                        : Icons.play_circle_filled,
-                    color: AppColors.primaryTeal,
-                    size: 32,
+                PulsingPlayIcon(
+                  active: audioService.isPlaying,
+                  child: IconButton(
+                    onPressed: () => audioService.togglePlayPause(),
+                    icon: Icon(
+                      audioService.isPlaying
+                          ? Icons.pause_circle_filled
+                          : Icons.play_circle_filled,
+                      color: AppColors.primaryTeal,
+                      size: 32,
+                    ),
                   ),
                 ),
               ],
