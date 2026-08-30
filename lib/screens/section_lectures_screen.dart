@@ -5,6 +5,7 @@ import '../services/archive_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/favorites_service.dart';
 import '../widgets/shimmer_lecture_card.dart';
+import '../widgets/pulsing_border.dart';
 import 'full_player.dart';
 
 class SectionLecturesScreen extends StatefulWidget {
@@ -156,6 +157,15 @@ class _LectureRow extends StatefulWidget {
 class _LectureRowState extends State<_LectureRow> {
   bool _pressed = false;
 
+  void _setPressed(bool value) {
+    setState(() => _pressed = value);
+    if (!value) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final audioService = AudioPlayerService.instance;
@@ -169,85 +179,88 @@ class _LectureRowState extends State<_LectureRow> {
             audioService.isPlaying;
         final isFav = favoritesService.isFavorite(widget.lecture);
 
-        return GestureDetector(
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          onTap: widget.onTap,
-          child: AnimatedScale(
-            scale: _pressed ? 1.02 : 1.0,
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeOut,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              transform: Matrix4.translationValues(
-                  0, _pressed ? -3 : 0, 0),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _pressed
-                    ? const Color(0xFF165652)
-                    : AppColors.cardDark,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _pressed || isThisPlaying
-                      ? AppColors.primaryTeal
-                      : AppColors.cardGradientStart.withOpacity(0.5),
-                ),
-                boxShadow: _pressed
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                        BoxShadow(
-                          color: AppColors.primaryTeal.withOpacity(0.25),
-                          blurRadius: 15,
-                          spreadRadius: 0,
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    isThisPlaying
-                        ? Icons.pause_circle_outline
-                        : Icons.play_circle_outline,
-                    color: AppColors.primaryTeal,
-                    size: 26,
+        return PulsingGlow(
+          active: isThisPlaying,
+          child: GestureDetector(
+            onTapDown: (_) => _setPressed(true),
+            onTapUp: (_) => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
+            onTap: widget.onTap,
+            child: AnimatedScale(
+              scale: _pressed ? 1.02 : 1.0,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOut,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOut,
+                transform:
+                    Matrix4.translationValues(0, _pressed ? -3 : 0, 0),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _pressed
+                      ? const Color(0xFF165652)
+                      : AppColors.cardDark,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _pressed || isThisPlaying
+                        ? AppColors.primaryTeal
+                        : AppColors.cardGradientStart.withOpacity(0.5),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      widget.lecture.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.mainText,
+                  boxShadow: _pressed
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.4),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                          BoxShadow(
+                            color: AppColors.primaryTeal.withOpacity(0.25),
+                            blurRadius: 15,
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isThisPlaying
+                          ? Icons.pause_circle_outline
+                          : Icons.play_circle_outline,
+                      color: AppColors.primaryTeal,
+                      size: 26,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        widget.lecture.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.mainText,
+                        ),
                       ),
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: () =>
-                        favoritesService.toggleFavorite(widget.lecture),
-                    child: Icon(
-                      isFav ? Icons.bookmark : Icons.bookmark_border,
-                      color: isFav
-                          ? AppColors.primaryTeal
-                          : AppColors.secondaryText.withOpacity(0.7),
-                      size: 20,
+                    GestureDetector(
+                      onTap: () =>
+                          favoritesService.toggleFavorite(widget.lecture),
+                      child: Icon(
+                        isFav ? Icons.bookmark : Icons.bookmark_border,
+                        color: isFav
+                            ? AppColors.primaryTeal
+                            : AppColors.secondaryText.withOpacity(0.7),
+                        size: 20,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
