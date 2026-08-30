@@ -10,20 +10,6 @@ late AudioPlayerHandler audioHandler;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await FavoritesService.instance.init();
-
-  audioHandler = await AudioService.init(
-    builder: () => AudioPlayerHandler(),
-    config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.sheikhapp.audio',
-      androidNotificationChannelName: 'تشغيل المحاضرات',
-      androidNotificationOngoing: true,
-      androidStopForegroundOnPause: true,
-    ),
-  );
-
-  await AudioPlayerService.instance.init(audioHandler);
-
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Material(
       color: Colors.white,
@@ -39,14 +25,55 @@ void main() async {
     );
   };
 
-  runApp(const SheikhApp());
+  String? initError;
+
+  try {
+    await FavoritesService.instance.init();
+
+    audioHandler = await AudioService.init(
+      builder: () => AudioPlayerHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.sheikhapp.audio',
+        androidNotificationChannelName: 'تشغيل المحاضرات',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+      ),
+    );
+
+    await AudioPlayerService.instance.init(audioHandler);
+  } catch (e, st) {
+    initError = '$e\n\n$st';
+  }
+
+  runApp(SheikhApp(initError: initError));
 }
 
 class SheikhApp extends StatelessWidget {
-  const SheikhApp({super.key});
+  final String? initError;
+  const SheikhApp({super.key, this.initError});
 
   @override
   Widget build(BuildContext context) {
+    if (initError != null) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                child: Text(
+                  'خطأ أثناء بدء التطبيق:\n\n$initError',
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return MaterialApp(
       title: 'الشيخ د. محمد الأمين إسماعيل',
       debugShowCheckedModeBanner: false,
