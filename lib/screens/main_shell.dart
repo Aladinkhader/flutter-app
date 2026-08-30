@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../services/audio_player_service.dart';
 import 'home_tab.dart';
-import 'placeholder_tab.dart';
 import 'all_lectures_tab.dart';
 import 'categories_tab.dart';
 import 'favorites_tab.dart';
+import 'settings_tab.dart';
 import 'full_player.dart';
 
 class MainShell extends StatefulWidget {
@@ -32,7 +32,7 @@ class _MainShellState extends State<MainShell> {
     AllLecturesTab(),
     CategoriesTab(),
     FavoritesTab(),
-    PlaceholderTab(label: 'الإعدادات — قريبًا'),
+    SettingsTab(),
   ];
 
   @override
