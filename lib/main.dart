@@ -1,12 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:audio_service/audio_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/favorites_service.dart';
+import 'services/audio_player_service.dart';
+
+late AudioPlayerHandler audioHandler;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await FavoritesService.instance.init();
+
+  audioHandler = await AudioService.init(
+    builder: () => AudioPlayerHandler(),
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'com.sheikhapp.audio',
+      androidNotificationChannelName: 'تشغيل المحاضرات',
+      androidNotificationOngoing: true,
+      androidStopForegroundOnPause: true,
+    ),
+  );
+
+  await AudioPlayerService.instance.init(audioHandler);
 
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Material(
