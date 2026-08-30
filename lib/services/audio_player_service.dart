@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/lecture.dart';
+import 'downloads_service.dart';
 
 class AudioPlayerHandler extends BaseAudioHandler {
   final AudioPlayer _player = AudioPlayer();
@@ -77,7 +78,12 @@ class AudioPlayerHandler extends BaseAudioHandler {
     ));
 
     try {
-      await _player.setUrl(lecture.audioUrl);
+      final localPath = DownloadsService.instance.localPathFor(lecture);
+      if (localPath != null) {
+        await _player.setFilePath(localPath);
+      } else {
+        await _player.setUrl(lecture.audioUrl);
+      }
       await _player.play();
     } catch (_) {}
     notifyListeners();
@@ -168,7 +174,6 @@ class AudioPlayerHandler extends BaseAudioHandler {
     await playLecture(prev, queue: _queue);
   }
 
-  // نستخدم ChangeNotifier يدويًا عشان باقي التطبيق يقدر يستمع للتغييرات
   final List<VoidCallback> _listeners = [];
 
   void addListener(VoidCallback listener) => _listeners.add(listener);
@@ -180,7 +185,6 @@ class AudioPlayerHandler extends BaseAudioHandler {
   }
 }
 
-/// Wrapper بسيط يحافظ على نفس الواجهة (API) القديمة يلي باقي الشاشات بتستخدمها
 class AudioPlayerService extends ChangeNotifier {
   AudioPlayerService._internal();
   static final AudioPlayerService instance = AudioPlayerService._internal();
