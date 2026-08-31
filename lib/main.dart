@@ -4,6 +4,7 @@ import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/favorites_service.dart';
 import 'services/audio_player_service.dart';
+import 'services/downloads_service.dart';
 
 late AudioPlayerHandler audioHandler;
 
@@ -29,6 +30,7 @@ void main() async {
 
   try {
     await FavoritesService.instance.init();
+    await DownloadsService.instance.init();
 
     audioHandler = await AudioService.init(
       builder: () => AudioPlayerHandler(),
