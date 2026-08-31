@@ -4,6 +4,7 @@ import '../models/lecture.dart';
 import '../services/archive_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/favorites_service.dart';
+import '../services/downloads_service.dart';
 import '../widgets/shimmer_lecture_card.dart';
 import '../widgets/pulsing_border.dart';
 import 'full_player.dart';
@@ -247,14 +248,19 @@ class _LectureCardState extends State<_LectureCard> {
   Widget build(BuildContext context) {
     final audioService = AudioPlayerService.instance;
     final favoritesService = FavoritesService.instance;
+    final downloadsService = DownloadsService.instance;
 
     return AnimatedBuilder(
-      animation: Listenable.merge([audioService, favoritesService]),
+      animation:
+          Listenable.merge([audioService, favoritesService, downloadsService]),
       builder: (context, _) {
         final isThisPlaying = audioService.currentLecture?.audioUrl ==
                 widget.lecture.audioUrl &&
             audioService.isPlaying;
         final isFav = favoritesService.isFavorite(widget.lecture);
+        final isDownloaded = downloadsService.isDownloaded(widget.lecture);
+        final isDownloading = downloadsService.isDownloading(widget.lecture);
+        final progress = downloadsService.progressFor(widget.lecture);
 
         return PulsingGlow(
           active: isThisPlaying,
@@ -312,7 +318,34 @@ class _LectureCardState extends State<_LectureCard> {
                       color: AppColors.primaryTeal,
                       size: 26,
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: isDownloaded || isDownloading
+                          ? null
+                          : () => downloadsService
+                              .downloadLecture(widget.lecture),
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: isDownloading
+                            ? CircularProgressIndicator(
+                                value: progress > 0 ? progress : null,
+                                strokeWidth: 2,
+                                color: AppColors.primaryTeal,
+                              )
+                            : Icon(
+                                isDownloaded
+                                    ? Icons.check_circle
+                                    : Icons.download_rounded,
+                                color: isDownloaded
+                                    ? AppColors.primaryTeal
+                                    : AppColors.secondaryText
+                                        .withOpacity(0.7),
+                                size: 20,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
