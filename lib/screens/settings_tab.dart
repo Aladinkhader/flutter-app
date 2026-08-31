@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/favorites_service.dart';
+import '../services/downloads_service.dart';
 import '../services/archive_service.dart';
 import 'sheikh_bio_dialog.dart';
 
@@ -44,6 +45,7 @@ class _SettingsTabState extends State<SettingsTab> {
   @override
   Widget build(BuildContext context) {
     final favoritesService = FavoritesService.instance;
+    final downloadsService = DownloadsService.instance;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -153,7 +155,13 @@ class _SettingsTabState extends State<SettingsTab> {
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: _StatCard(label: 'التنزيلات', value: '0'),
+              child: AnimatedBuilder(
+                animation: downloadsService,
+                builder: (context, _) => _StatCard(
+                  label: 'التنزيلات',
+                  value: downloadsService.downloads.length.toString(),
+                ),
+              ),
             ),
           ],
         ),
