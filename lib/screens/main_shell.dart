@@ -6,7 +6,7 @@ import '../widgets/pulsing_border.dart';
 import 'home_tab.dart';
 import 'all_lectures_tab.dart';
 import 'categories_tab.dart';
-import 'favorites_tab.dart';
+import 'downloads_favorites_tab.dart';
 import 'settings_tab.dart';
 import 'full_player.dart';
 
@@ -24,7 +24,7 @@ class _MainShellState extends State<MainShell> {
     'الرئيسية',
     'جميع المحاضرات',
     'الأقسام',
-    'المفضلة',
+    'التنزيلات والمفضلة',
     'الإعدادات',
   ];
 
@@ -32,7 +32,7 @@ class _MainShellState extends State<MainShell> {
     HomeTab(),
     AllLecturesTab(),
     CategoriesTab(),
-    FavoritesTab(),
+    DownloadsFavoritesTab(),
     SettingsTab(),
   ];
 
@@ -89,8 +89,8 @@ class _MainShellState extends State<MainShell> {
                   label: 'الأقسام',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.bookmark_rounded),
-                  label: 'المفضلة',
+                  icon: Icon(Icons.download_rounded),
+                  label: 'التنزيلات',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.settings_rounded),
