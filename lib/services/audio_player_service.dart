@@ -4,21 +4,32 @@ import 'package:just_audio/just_audio.dart';
 import '../models/lecture.dart';
 import 'downloads_service.dart';
 
-class AudioPlayerHandler extends BaseAudioHandler {
+class AudioPlayerHandler extends BaseAudioHandler
+    with QueueHandler, SeekHandler {
   final AudioPlayer _player = AudioPlayer();
+
   Lecture? _currentLecture;
   List<Lecture> _queue = [];
   bool _repeat = false;
+  bool _listenersAttached = false;
 
   AudioPlayerHandler() {
+    _attachPlayerListeners();
+  }
+
+  void _attachPlayerListeners() {
+    if (_listenersAttached) return;
+    _listenersAttached = true;
+
     _player.playbackEventStream.listen(_broadcastState);
-    _player.processingStateStream.listen((state) {
+
+    _player.processingStateStream.listen((state) async {
       if (state == ProcessingState.completed) {
         if (_repeat) {
-          _player.seek(Duration.zero);
-          _player.play();
+          await _player.seek(Duration.zero);
+          await _player.play();
         } else {
-          playNext();
+          await playNext();
         }
       }
     });
@@ -32,72 +43,123 @@ class AudioPlayerHandler extends BaseAudioHandler {
   AudioPlayer get player => _player;
 
   void _broadcastState(PlaybackEvent event) {
-    playbackState.add(playbackState.value.copyWith(
-      controls: [
-        MediaControl.skipToPrevious,
-        _player.playing ? MediaControl.pause : MediaControl.play,
-        MediaControl.stop,
-        MediaControl.skipToNext,
-      ],
-      systemActions: const {
-        MediaAction.seek,
-        MediaAction.seekForward,
-        MediaAction.seekBackward,
-      },
-      androidCompactActionIndices: const [0, 1, 3],
-      processingState: const {
-        ProcessingState.idle: AudioProcessingState.idle,
-        ProcessingState.loading: AudioProcessingState.loading,
-        ProcessingState.buffering: AudioProcessingState.buffering,
-        ProcessingState.ready: AudioProcessingState.ready,
-        ProcessingState.completed: AudioProcessingState.completed,
-      }[_player.processingState]!,
-      playing: _player.playing,
-      updatePosition: _player.position,
-      speed: _player.speed,
-    ));
+    final processingState = <ProcessingState, AudioProcessingState>{
+      ProcessingState.idle: AudioProcessingState.idle,
+      ProcessingState.loading: AudioProcessingState.loading,
+      ProcessingState.buffering: AudioProcessingState.buffering,
+      ProcessingState.ready: AudioProcessingState.ready,
+      ProcessingState.completed: AudioProcessingState.completed,
+    }[_player.processingState];
+
+    if (processingState == null) return;
+
+    final currentIndex = _currentLecture == null
+        ? null
+        : _queue.indexWhere(
+            (lecture) => lecture.audioUrl == _currentLecture!.audioUrl,
+          );
+
+    playbackState.add(
+      playbackState.value.copyWith(
+        controls: [
+          MediaControl.skipToPrevious,
+          if (_player.playing) MediaControl.pause else MediaControl.play,
+          MediaControl.stop,
+          MediaControl.skipToNext,
+        ],
+        systemActions: const {
+          MediaAction.seek,
+          MediaAction.seekForward,
+          MediaAction.seekBackward,
+        },
+        androidCompactActionIndices: const [0, 1, 3],
+        processingState: processingState,
+        playing: _player.playing,
+        updatePosition: _player.position,
+        bufferedPosition: event.bufferedPosition,
+        speed: _player.speed,
+        queueIndex: currentIndex == null || currentIndex < 0
+            ? null
+            : currentIndex,
+      ),
+    );
+
+    notifyListeners();
   }
 
   Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
     if (queue != null) {
       _queue = queue;
+      this.queue.add(
+        _queue
+            .map(
+              (item) => MediaItem(
+                id: item.audioUrl,
+                title: item.title,
+                artist: item.section,
+                album: 'الشيخ د. محمد الأمين إسماعيل',
+              ),
+            )
+            .toList(),
+      );
     }
 
     if (_currentLecture?.audioUrl == lecture.audioUrl) {
       await togglePlayPause();
       return;
     }
+
     _currentLecture = lecture;
     notifyListeners();
 
-    mediaItem.add(MediaItem(
+    final item = MediaItem(
       id: lecture.audioUrl,
       title: lecture.title,
       artist: lecture.section,
       album: 'الشيخ د. محمد الأمين إسماعيل',
-    ));
+    );
+    mediaItem.add(item);
 
     try {
       final localPath = DownloadsService.instance.localPathFor(lecture);
+
       if (localPath != null) {
         await _player.setFilePath(localPath);
       } else {
         await _player.setUrl(lecture.audioUrl);
       }
+
+      final loadedDuration = _player.duration;
+      if (loadedDuration != null) {
+        mediaItem.add(item.copyWith(duration: loadedDuration));
+      }
+
+      _broadcastState(_player.playbackEvent);
       await _player.play();
-    } catch (_) {}
-    notifyListeners();
+      _broadcastState(_player.playbackEvent);
+    } catch (error) {
+      playbackState.add(
+        playbackState.value.copyWith(
+          processingState: AudioProcessingState.error,
+          playing: false,
+          errorMessage: error.toString(),
+        ),
+      );
+      notifyListeners();
+    }
   }
 
   @override
   Future<void> play() async {
     await _player.play();
+    _broadcastState(_player.playbackEvent);
     notifyListeners();
   }
 
   @override
   Future<void> pause() async {
     await _player.pause();
+    _broadcastState(_player.playbackEvent);
     notifyListeners();
   }
 
@@ -112,26 +174,38 @@ class AudioPlayerHandler extends BaseAudioHandler {
   @override
   Future<void> seek(Duration position) async {
     await _player.seek(position);
+    _broadcastState(_player.playbackEvent);
+    notifyListeners();
   }
 
   @override
   Future<void> stop() async {
     await _player.stop();
     _currentLecture = null;
+    mediaItem.add(null);
     notifyListeners();
     await super.stop();
   }
 
-  Future<void> skipForward() async {
+  @override
+  Future<void> fastForward() async {
     final newPosition = position + const Duration(seconds: 10);
     await _player.seek(newPosition > duration ? duration : newPosition);
+    _broadcastState(_player.playbackEvent);
   }
 
-  Future<void> skipBackward() async {
+  @override
+  Future<void> rewind() async {
     final newPosition = position - const Duration(seconds: 10);
-    await _player
-        .seek(newPosition < Duration.zero ? Duration.zero : newPosition);
+    await _player.seek(
+      newPosition < Duration.zero ? Duration.zero : newPosition,
+    );
+    _broadcastState(_player.playbackEvent);
   }
+
+  Future<void> skipForward() => fastForward();
+
+  Future<void> skipBackward() => rewind();
 
   void toggleRepeat() {
     _repeat = !_repeat;
@@ -140,15 +214,17 @@ class AudioPlayerHandler extends BaseAudioHandler {
 
   bool get hasNext {
     if (_currentLecture == null || _queue.isEmpty) return false;
-    final index =
-        _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    final index = _queue.indexWhere(
+      (lecture) => lecture.audioUrl == _currentLecture!.audioUrl,
+    );
     return index != -1 && index < _queue.length - 1;
   }
 
   bool get hasPrevious {
     if (_currentLecture == null || _queue.isEmpty) return false;
-    final index =
-        _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    final index = _queue.indexWhere(
+      (lecture) => lecture.audioUrl == _currentLecture!.audioUrl,
+    );
     return index > 0;
   }
 
@@ -160,33 +236,36 @@ class AudioPlayerHandler extends BaseAudioHandler {
 
   Future<void> playNext() async {
     if (!hasNext) return;
-    final index =
-        _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
-    final next = _queue[index + 1];
-    await playLecture(next, queue: _queue);
+    final index = _queue.indexWhere(
+      (lecture) => lecture.audioUrl == _currentLecture!.audioUrl,
+    );
+    await playLecture(_queue[index + 1], queue: _queue);
   }
 
   Future<void> playPrevious() async {
     if (!hasPrevious) return;
-    final index =
-        _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
-    final prev = _queue[index - 1];
-    await playLecture(prev, queue: _queue);
+    final index = _queue.indexWhere(
+      (lecture) => lecture.audioUrl == _currentLecture!.audioUrl,
+    );
+    await playLecture(_queue[index - 1], queue: _queue);
   }
 
   final List<VoidCallback> _listeners = [];
 
   void addListener(VoidCallback listener) => _listeners.add(listener);
+
   void removeListener(VoidCallback listener) => _listeners.remove(listener);
+
   void notifyListeners() {
-    for (final l in _listeners) {
-      l();
+    for (final listener in List<VoidCallback>.from(_listeners)) {
+      listener();
     }
   }
 }
 
 class AudioPlayerService extends ChangeNotifier {
   AudioPlayerService._internal();
+
   static final AudioPlayerService instance = AudioPlayerService._internal();
 
   late AudioPlayerHandler _handler;
@@ -210,11 +289,18 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) =>
       _handler.playLecture(lecture, queue: queue);
+
   Future<void> togglePlayPause() => _handler.togglePlayPause();
+
   Future<void> seek(Duration position) => _handler.seek(position);
+
   Future<void> skipForward() => _handler.skipForward();
+
   Future<void> skipBackward() => _handler.skipBackward();
+
   void toggleRepeat() => _handler.toggleRepeat();
+
   Future<void> playNext() => _handler.playNext();
+
   Future<void> playPrevious() => _handler.playPrevious();
 }
