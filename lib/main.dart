@@ -37,8 +37,11 @@ void main() async {
       config: const AudioServiceConfig(
         androidNotificationChannelId: 'com.sheikhapp.audio',
         androidNotificationChannelName: 'تشغيل المحاضرات',
+        androidNotificationChannelDescription:
+            'التحكم في تشغيل المحاضرات الصوتية',
+        androidNotificationIcon: 'mipmap/ic_launcher',
         androidNotificationOngoing: true,
-        androidStopForegroundOnPause: true,
+        androidStopForegroundOnPause: false,
       ),
     );
 
