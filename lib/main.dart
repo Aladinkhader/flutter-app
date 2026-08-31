@@ -40,7 +40,7 @@ void main() async {
         androidNotificationChannelDescription:
             'التحكم في تشغيل المحاضرات الصوتية',
         androidNotificationIcon: 'mipmap/ic_launcher',
-        androidNotificationOngoing: true,
+        androidNotificationOngoing: false,
         androidStopForegroundOnPause: false,
       ),
     );
