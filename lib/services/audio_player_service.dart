@@ -13,7 +13,8 @@ class DebugLog {
   }
 }
 
-class AudioPlayerHandler extends BaseAudioHandler {
+class AudioPlayerHandler extends BaseAudioHandler
+    with QueueHandler, SeekHandler {
   final AudioPlayer _player = AudioPlayer();
   Lecture? _currentLecture;
   List<Lecture> _queue = [];
@@ -80,6 +81,21 @@ class AudioPlayerHandler extends BaseAudioHandler {
     DebugLog.add('playLecture called: ${lecture.title}');
     if (queue != null) {
       _queue = queue;
+      this.queue.add(
+        _queue
+            .map(
+              (item) => MediaItem(
+                id: item.audioUrl,
+                title: item.title,
+                artist: item.section,
+                album: 'الشيخ د. محمد الأمين إسماعيل',
+                artUri: Uri.parse(
+                  'android.resource://com.sheikhapp.temp_scaffold/mipmap/ic_launcher',
+                ),
+              ),
+            )
+            .toList(),
+      );
     }
 
     if (_currentLecture?.audioUrl == lecture.audioUrl) {
@@ -90,12 +106,16 @@ class AudioPlayerHandler extends BaseAudioHandler {
     notifyListeners();
 
     try {
-      mediaItem.add(MediaItem(
+      final item = MediaItem(
         id: lecture.audioUrl,
         title: lecture.title,
         artist: lecture.section,
         album: 'الشيخ د. محمد الأمين إسماعيل',
-      ));
+        artUri: Uri.parse(
+          'android.resource://com.sheikhapp.temp_scaffold/mipmap/ic_launcher',
+        ),
+      );
+      mediaItem.add(item);
       DebugLog.add('mediaItem.add OK');
     } catch (e) {
       DebugLog.add('mediaItem.add ERROR: $e');
