@@ -1,23 +1,22 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.sheikhapp.temp_scaffold">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-
-    <uses-permission
-        android:name="android.permission.FOREGROUND_SERVICE" />
-
-    <uses-permission
-        android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-
-    <uses-permission
-        android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- صلاحيات Android 13+ للإشعارات -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- صلاحيات Foreground Service المطلوبة -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="temp_scaffold"
+        android:label="الشيخ د. محمد الأمين إسماعيل"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="true">
 
+        <!-- النشاط الرئيسي -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -26,65 +25,27 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
-
+                android:resource="@style/NormalTheme"/>
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-
         </activity>
 
-        <!-- Native Media3 playback service -->
-        <service
-            android:name=".NativeMediaPlaybackService"
-            android:foregroundServiceType="mediaPlayback"
-            android:exported="true">
-
-            <intent-filter>
-                <action android:name="androidx.media3.session.MediaSessionService" />
-            </intent-filter>
-
-        </service>
-
-        <!-- audio_service -->
+        <!-- خدمة AudioService من audio_service -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"
-            android:foregroundServiceType="mediaPlayback"
-            android:exported="true">
-
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
             <intent-filter>
-                <action android:name="android.media.browse.MediaBrowserService" />
+                <action android:name="android.media.browse.MediaBrowserService"/>
             </intent-filter>
-
         </service>
-
-        <receiver
-            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
-            android:exported="true">
-
-            <intent-filter>
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
-            </intent-filter>
-
-        </receiver>
 
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
     </application>
-
-    <queries>
-
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT" />
-            <data android:mimeType="text/plain" />
-        </intent>
-
-    </queries>
-
 </manifest>
