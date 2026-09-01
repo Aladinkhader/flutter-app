@@ -4,6 +4,7 @@ import '../services/favorites_service.dart';
 import '../services/downloads_service.dart';
 import '../services/archive_service.dart';
 import 'sheikh_bio_dialog.dart';
+import 'debug_log_screen.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -79,6 +80,20 @@ class _SettingsTabState extends State<SettingsTab> {
             title: 'من هو الشيخ د. محمد الأمين إسماعيل',
             icon: Icons.info_outline,
             onTap: () => showSheikhBioDialog(context),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // زر مؤقت للتشخيص - هنحذفه لاحقًا
+        _SettingsCard(
+          child: _SettingsItem(
+            title: '(مؤقت) عرض سجل التشخيص',
+            icon: Icons.bug_report_outlined,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DebugLogScreen()),
+              );
+            },
           ),
         ),
         const SizedBox(height: 14),
