@@ -35,13 +35,16 @@ void main() async {
     audioHandler = await AudioService.init(
       builder: () => AudioPlayerHandler(),
       config: const AudioServiceConfig(
+        androidResumeOnClick: true,
         androidNotificationChannelId: 'com.sheikhapp.audio',
         androidNotificationChannelName: 'تشغيل المحاضرات',
         androidNotificationChannelDescription:
             'التحكم في تشغيل المحاضرات الصوتية',
         androidNotificationIcon: 'mipmap/ic_launcher',
-        androidNotificationOngoing: false,
-        androidStopForegroundOnPause: false,
+        androidShowNotificationBadge: false,
+        androidNotificationClickStartsActivity: true,
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
       ),
     );
 
@@ -55,6 +58,7 @@ void main() async {
 
 class SheikhApp extends StatelessWidget {
   final String? initError;
+
   const SheikhApp({super.key, this.initError});
 
   @override
