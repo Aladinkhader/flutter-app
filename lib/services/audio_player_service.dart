@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:flutter/services.dart';
 import '../models/lecture.dart';
 import 'downloads_service.dart';
 
@@ -19,6 +20,10 @@ class AudioPlayerHandler extends BaseAudioHandler
   Lecture? _currentLecture;
   List<Lecture> _queue = [];
   bool _repeat = false;
+  bool _nativePlaying = false;
+
+  static const MethodChannel _nativeChannel =
+      MethodChannel('com.sheikhapp.temp_scaffold/native_media');
 
   AudioPlayerHandler() {
     DebugLog.add('AudioPlayerHandler created');
@@ -39,7 +44,7 @@ class AudioPlayerHandler extends BaseAudioHandler
   }
 
   Lecture? get currentLecture => _currentLecture;
-  bool get isPlaying => _player.playing;
+  bool get isPlaying => _nativePlaying || _player.playing;
   bool get isRepeat => _repeat;
   Duration get position => _player.position;
   Duration get duration => _player.duration ?? Duration.zero;
@@ -122,31 +127,67 @@ class AudioPlayerHandler extends BaseAudioHandler
     }
 
     try {
-      final localPath = DownloadsService.instance.localPathFor(lecture);
-      if (localPath != null) {
-        await _player.setFilePath(localPath);
-        DebugLog.add('setFilePath OK: $localPath');
-      } else {
-        await _player.setUrl(lecture.audioUrl);
-        DebugLog.add('setUrl OK');
-      }
-      await _player.play();
-      DebugLog.add('play() called successfully');
+      await _nativeChannel.invokeMethod('nativePlay', {
+        'url': lecture.audioUrl,
+        'title': lecture.title,
+        'artist': lecture.section,
+      });
+      _nativePlaying = true;
+      playbackState.add(
+        playbackState.value.copyWith(
+          controls: const [
+            MediaControl.skipToPrevious,
+            MediaControl.pause,
+            MediaControl.stop,
+            MediaControl.skipToNext,
+          ],
+          processingState: AudioProcessingState.ready,
+          playing: true,
+          updatePosition: Duration.zero,
+          speed: 1.0,
+        ),
+      );
+      DebugLog.add('nativePlay called successfully');
     } catch (e) {
-      DebugLog.add('PLAY ERROR: $e');
+      DebugLog.add('NATIVE PLAY ERROR: $e');
     }
     notifyListeners();
   }
 
   @override
   Future<void> play() async {
-    await _player.play();
+    try {
+      await _nativeChannel.invokeMethod('nativePlay', {
+        'url': _currentLecture?.audioUrl,
+        'title': _currentLecture?.title ?? '',
+        'artist': _currentLecture?.section ?? '',
+      });
+      _nativePlaying = true;
+    } catch (e) {
+      DebugLog.add('NATIVE RESUME ERROR: $e');
+    }
     notifyListeners();
   }
 
   @override
   Future<void> pause() async {
-    await _player.pause();
+    try {
+      await _nativeChannel.invokeMethod('nativePause');
+      _nativePlaying = false;
+      playbackState.add(
+        playbackState.value.copyWith(
+          controls: const [
+            MediaControl.skipToPrevious,
+            MediaControl.play,
+            MediaControl.stop,
+            MediaControl.skipToNext,
+          ],
+          playing: false,
+        ),
+      );
+    } catch (e) {
+      DebugLog.add('NATIVE PAUSE ERROR: $e');
+    }
     notifyListeners();
   }
 
@@ -165,8 +206,15 @@ class AudioPlayerHandler extends BaseAudioHandler
 
   @override
   Future<void> stop() async {
+    try {
+      await _nativeChannel.invokeMethod('nativeStop');
+    } catch (e) {
+      DebugLog.add('NATIVE STOP ERROR: $e');
+    }
+    _nativePlaying = false;
     await _player.stop();
     _currentLecture = null;
+    mediaItem.add(null);
     notifyListeners();
     await super.stop();
   }
