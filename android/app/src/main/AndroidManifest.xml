@@ -38,14 +38,26 @@
 
         </activity>
 
+        <!-- Native Media3 playback service -->
+        <service
+            android:name=".NativeMediaPlaybackService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+
+        </service>
+
+        <!-- audio_service -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="true">
 
             <intent-filter>
-                <action
-                    android:name="android.media.browse.MediaBrowserService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
 
         </service>
