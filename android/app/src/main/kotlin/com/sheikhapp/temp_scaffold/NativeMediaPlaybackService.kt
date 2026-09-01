@@ -1,108 +1,78 @@
-package com.sheikhapp.temp_scaffold
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-import android.app.PendingIntent
-import android.content.Intent
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
+    <uses-permission android:name="android.permission.INTERNET" />
 
-@UnstableApi
-class NativeMediaPlaybackService : MediaSessionService() {
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    companion object {
-        const val ACTION_PLAY = "com.sheikhapp.temp_scaffold.PLAY"
-        const val ACTION_PAUSE = "com.sheikhapp.temp_scaffold.PAUSE"
-        const val ACTION_STOP = "com.sheikhapp.temp_scaffold.STOP"
-        const val EXTRA_URL = "audio_url"
-        const val EXTRA_TITLE = "audio_title"
-        const val EXTRA_ARTIST = "audio_artist"
-    }
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE" />
 
-    private var player: ExoPlayer? = null
-    private var mediaSession: MediaSession? = null
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
-    override fun onCreate() {
-        super.onCreate()
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS" />
 
-        val openAppIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
+    <application
+        android:label="temp_scaffold"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
 
-        val sessionActivity = PendingIntent.getActivity(
-            this,
-            100,
-            openAppIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
 
-        val audioPlayer = ExoPlayer.Builder(this)
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_SPEECH)
-                    .build(),
-                true,
-            )
-            .setHandleAudioBecomingNoisy(true)
-            .build()
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
 
-        player = audioPlayer
-        mediaSession = MediaSession.Builder(this, audioPlayer)
-            .setSessionActivity(sessionActivity)
-            .build()
-    }
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
 
-    override fun onStartCommand(
-        intent: Intent?,
-        flags: Int,
-        startId: Int,
-    ): Int {
-        when (intent?.action) {
-            ACTION_PLAY -> {
-                val url = intent.getStringExtra(EXTRA_URL)
-                if (!url.isNullOrBlank()) {
-                    val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
-                    val artist = intent.getStringExtra(EXTRA_ARTIST).orEmpty()
-                    val item = MediaItem.Builder()
-                        .setUri(url)
-                        .setMediaMetadata(
-                            MediaMetadata.Builder()
-                                .setTitle(title)
-                                .setArtist(artist)
-                                .setAlbumTitle("الشيخ د. محمد الأمين إسماعيل")
-                                .build(),
-                        )
-                        .build()
-                    player?.setMediaItem(item)
-                    player?.prepare()
-                    player?.play()
-                }
-            }
-            ACTION_PAUSE -> player?.pause()
-            ACTION_STOP -> {
-                player?.stop()
-                player?.clearMediaItems()
-                stopSelf()
-            }
-        }
+        </activity>
 
-        return START_STICKY
-    }
+        <service
+            android:name="com.ryanheise.audioservice.AudioService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true">
 
-    override fun onGetSession(
-        controllerInfo: MediaSession.ControllerInfo,
-    ): MediaSession? = mediaSession
+            <intent-filter>
+                <action
+                    android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
 
-    override fun onDestroy() {
-        mediaSession?.release()
-        mediaSession = null
-        player?.release()
-        player = null
-        super.onDestroy()
-    }
-}
+        </service>
+
+        <receiver
+            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+
+        </receiver>
+
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+
+    </application>
+
+    <queries>
+
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
+        </intent>
+
+    </queries>
+
+</manifest>
