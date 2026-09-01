@@ -45,21 +45,12 @@ Future<void> main() async {
             'تشغيل المحاضرات',
         androidNotificationChannelDescription:
             'التحكم في تشغيل المحاضرات الصوتية',
-
         androidNotificationIcon:
             'mipmap/ic_launcher',
-
         androidShowNotificationBadge: false,
-
         androidNotificationClickStartsActivity: true,
-
-        androidNotificationOngoing: true,
-
-        // مهم في مرحلة الاختبار:
-        // إبقاء خدمة الصوت في الـforeground
-        // حتى أثناء الإيقاف المؤقت.
+        androidNotificationOngoing: false,
         androidStopForegroundOnPause: false,
-
         androidResumeOnClick: true,
       ),
     );
