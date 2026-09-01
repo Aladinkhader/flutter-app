@@ -87,18 +87,26 @@ class AudioPlayerHandler extends BaseAudioHandler
     notifyListeners();
   }
 
+  MediaItem _buildMediaItem(Lecture lecture, {Duration? duration}) {
+    return MediaItem(
+      id: lecture.audioUrl,
+      title: lecture.title,
+      artist: lecture.section,
+      album: 'الشيخ د. محمد الأمين إسماعيل',
+      duration: duration,
+      artUri: Uri.parse(
+        'android.resource://com.sheikhapp.temp_scaffold/mipmap/ic_launcher',
+      ),
+    );
+  }
+
   Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
     if (queue != null) {
       _queue = queue;
       this.queue.add(
         _queue
             .map(
-              (item) => MediaItem(
-                id: item.audioUrl,
-                title: item.title,
-                artist: item.section,
-                album: 'الشيخ د. محمد الأمين إسماعيل',
-              ),
+              (item) => _buildMediaItem(item),
             )
             .toList(),
       );
@@ -112,12 +120,7 @@ class AudioPlayerHandler extends BaseAudioHandler
     _currentLecture = lecture;
     notifyListeners();
 
-    final item = MediaItem(
-      id: lecture.audioUrl,
-      title: lecture.title,
-      artist: lecture.section,
-      album: 'الشيخ د. محمد الأمين إسماعيل',
-    );
+    final item = _buildMediaItem(lecture);
     mediaItem.add(item);
 
     try {
