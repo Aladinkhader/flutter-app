@@ -49,7 +49,7 @@ Future<void> main() async {
             'mipmap/ic_launcher',
         androidShowNotificationBadge: false,
         androidNotificationClickStartsActivity: true,
-        androidNotificationOngoing: false,
+        androidNotificationOngoing: true,   // <-- التغيير: false → true
         androidStopForegroundOnPause: false,
         androidResumeOnClick: true,
       ),
