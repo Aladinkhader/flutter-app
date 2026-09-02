@@ -34,7 +34,7 @@
             </intent-filter>
         </activity>
 
-        <!-- خدمة AudioService من audio_service -->
+        <!-- خدمة just_audio_background -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"
             android:exported="true"
