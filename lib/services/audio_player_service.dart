@@ -122,7 +122,6 @@ class AudioPlayerHandler extends BaseAudioHandler {
     int initialIndex = 0,
   }) async {
     _queue = List<MediaItem>.unmodifiable(items);
-    super.setQueue(_queue);
 
     if (_queue.isEmpty) {
       await _player.stop();
@@ -169,11 +168,11 @@ class AudioPlayerHandler extends BaseAudioHandler {
     await _playbackSubscription?.cancel();
     await _processingSubscription?.cancel();
     await _player.dispose();
-    await super.onDestroy();
   }
 
   Duration get duration => _player.duration ?? Duration.zero;
   Duration get position => _player.position;
+  int get currentIndex => _player.currentIndex ?? 0;
 }
 
 class AudioPlayerService extends ChangeNotifier {
@@ -237,7 +236,6 @@ class AudioPlayerService extends ChangeNotifier {
         )
         .toList();
 
-    // الاعتماد على الرابط يمنع تشغيل أول ملف بالخطأ عند وجود كاش قديم.
     final startIndex = lectures.indexWhere(
       (item) => item.audioUrl == lecture.audioUrl,
     );
@@ -252,8 +250,23 @@ class AudioPlayerService extends ChangeNotifier {
   Future<void> pause() => _handler.pause();
   Future<void> stop() => _handler.stop();
   Future<void> play() => _handler.play();
+  Future<void> seek(Duration position) => _handler.seek(position);
   Future<void> next() => _handler.skipToNext();
   Future<void> previous() => _handler.skipToPrevious();
+  Future<void> playPrevious() => previous();
+
+  bool get hasPrevious => _handler.currentIndex > 0;
+
+  Future<void> skipBackward() async {
+    final target = _handler.position - const Duration(seconds: 10);
+    await _handler.seek(target.isNegative ? Duration.zero : target);
+  }
+
+  Future<void> skipForward() async {
+    final target = _handler.position + const Duration(seconds: 10);
+    final max = _handler.duration;
+    await _handler.seek(target > max ? max : target);
+  }
 
   Lecture? get currentLecture {
     final item = _currentItem ?? _handler.mediaItem.value;
