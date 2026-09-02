@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/favorites_service.dart';
@@ -31,6 +32,13 @@ Future<void> main() async {
   try {
     await FavoritesService.instance.init();
     await DownloadsService.instance.init();
+
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'com.sheikhapp.audio',
+      androidNotificationChannelName: 'تشغيل المحاضرات',
+      androidNotificationOngoing: true,
+    );
+
     await AudioPlayerService.instance.init();
   } catch (e, st) {
     initError = '$e\n\n$st';
