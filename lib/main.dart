@@ -9,11 +9,11 @@ import 'services/downloads_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // تهيئة just_audio_background (بديل AudioService.init)
+  // تهيئة إشعار الخلفية وستارة الإشعارات
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.sheikhapp.audio',
     androidNotificationChannelName: 'تشغيل المحاضرات',
-    androidNotificationIcon: 'notification_icon',
+    androidNotificationIcon: 'mipmap/ic_launcher',
     androidShowNotificationBadge: false,
     androidNotificationOngoing: true,
     androidStopForegroundOnPause: true,
