@@ -1,5 +1,4 @@
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/lecture.dart';
@@ -45,7 +44,6 @@ class AudioPlayerService extends ChangeNotifier {
     });
   }
 
-  // دالة تشغيل المحاضرة وربطها بشرائط إشعارات النظام مباشرة
   Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
     _currentLecture = lecture;
     _lectureQueue = (queue != null && queue.isNotEmpty) ? queue : [lecture];
@@ -55,13 +53,6 @@ class AudioPlayerService extends ChangeNotifier {
     final audioSources = _lectureQueue.map((lec) {
       return AudioSource.uri(
         Uri.parse(lec.audioUrl),
-        tag: MediaItem(
-          id: lec.id.toString(),
-          album: lec.section,
-          title: lec.title,
-          artist: lec.sheikhName ?? 'الشيخ د. محمد الأمين إسماعيل',
-          artUri: lec.imageUrl != null ? Uri.parse(lec.imageUrl!) : null,
-        ),
       );
     }).toList();
 
