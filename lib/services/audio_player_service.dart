@@ -1,10 +1,11 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/lecture.dart';
 
 // ================================
-// AudioPlayerHandler (متوافق مع audio_service 0.18.19)
+// AudioPlayerHandler
 // ================================
 class AudioPlayerHandler extends BaseAudioHandler {
   final AudioPlayer _player = AudioPlayer();
@@ -12,7 +13,6 @@ class AudioPlayerHandler extends BaseAudioHandler {
 
   AudioPlayerHandler() {
     _player.playbackEventStream.listen((event) {
-      // تحديث حالة التشغيل (بدون androidCompactDeviceActions)
       playbackState.add(playbackState.value.copyWith(
         controls: _computeControls(),
         systemActions: const {
@@ -60,7 +60,6 @@ class AudioPlayerHandler extends BaseAudioHandler {
   @override
   Future<void> skipToNext() async {
     await _player.seekToNext();
-    // تحديث العنصر الحالي بعد التخطي
     final index = _player.currentIndex ?? 0;
     if (index < _queue.length) {
       mediaItem.add(_queue[index]);
@@ -81,7 +80,6 @@ class AudioPlayerHandler extends BaseAudioHandler {
     await _player.seek(position);
   }
 
-  // دالة لتعيين قائمة التشغيل (بدلاً من super.setQueue)
   Future<void> setQueue(List<MediaItem> queue) async {
     _queue = queue;
     final sources = queue.map((item) {
@@ -109,7 +107,6 @@ class AudioPlayerHandler extends BaseAudioHandler {
     mediaItem.add(_queue[index]);
   }
 
-  // إرجاع List بدلاً من Set
   List<MediaControl> _computeControls() {
     final isPlaying = playbackState.value.playing;
     if (isPlaying) {
@@ -132,14 +129,16 @@ class AudioPlayerHandler extends BaseAudioHandler {
   @override
   Future<void> onDestroy() async {
     await _player.dispose();
-    // لا حاجة لاستدعاء super.onDestroy() لأنه غير موجود
   }
+
+  Duration get duration => _player.duration ?? Duration.zero;
+  Duration get position => _player.position;
 }
 
 // ================================
-// AudioPlayerService
+// AudioPlayerService (يورث ChangeNotifier)
 // ================================
-class AudioPlayerService {
+class AudioPlayerService extends ChangeNotifier {
   static final AudioPlayerService _instance = AudioPlayerService._internal();
   factory AudioPlayerService() => _instance;
   AudioPlayerService._internal();
@@ -147,18 +146,34 @@ class AudioPlayerService {
   static AudioPlayerService get instance => _instance;
 
   late AudioPlayerHandler _handler;
+  bool _isPlaying = false;
 
   Future<void> init(AudioPlayerHandler handler) async {
     _handler = handler;
+    _handler.playbackState.listen((state) {
+      _isPlaying = state.playing;
+      notifyListeners();
+    });
   }
 
-  // دالة تشغيل محاضرة متوافقة مع Lecture الحالي
+  bool get isPlaying => _isPlaying;
+  Duration get duration => _handler.duration;
+  Duration get position => _handler.position;
+
+  void togglePlayPause() {
+    if (_isPlaying) {
+      _handler.pause();
+    } else {
+      _handler.play();
+    }
+  }
+
   Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
     final items = <MediaItem>[];
 
     if (queue != null && queue.isNotEmpty) {
       items.addAll(queue.map((lec) => MediaItem(
-            id: lec.identifier,          // استخدم identifier
+            id: lec.identifier,
             title: lec.title,
             artist: 'الشيخ د. محمد الأمين إسماعيل',
             album: lec.section.isNotEmpty ? lec.section : 'محاضرات',
@@ -176,7 +191,6 @@ class AudioPlayerService {
 
     await _handler.setQueue(items);
 
-    // تحديد الفهرس الصحيح
     int startIndex = 0;
     if (queue != null && queue.isNotEmpty) {
       startIndex = queue.indexWhere((lec) => lec.identifier == lecture.identifier);
@@ -194,10 +208,6 @@ class AudioPlayerService {
   Future<void> play() async => _handler.play();
   Future<void> next() async => _handler.skipToNext();
   Future<void> previous() async => _handler.skipToPrevious();
-
-  bool get isPlaying => _handler.playbackState.value.playing;
-  Duration get currentPosition => _handler.playbackState.value.position;
-  Duration get duration => _handler.playbackState.value.duration ?? Duration.zero;
 
   Lecture? get currentLecture {
     final item = _handler.mediaItem.value;
