@@ -1,157 +1,208 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+
 import '../models/lecture.dart';
 
-// ================================
-// AudioPlayerHandler
-// ================================
 class AudioPlayerHandler extends BaseAudioHandler {
   final AudioPlayer _player = AudioPlayer();
-  List<MediaItem> _queue = [];
+  List<MediaItem> _queue = const [];
+  StreamSubscription<PlaybackEvent>? _playbackSubscription;
+  StreamSubscription<ProcessingState>? _processingSubscription;
 
   AudioPlayerHandler() {
-    _player.playbackEventStream.listen((event) {
-      playbackState.add(playbackState.value.copyWith(
-        controls: _computeControls(),
-        systemActions: const {
-          MediaAction.seek,
-          MediaAction.seekForward,
-          MediaAction.seekBackward,
-        },
-      ));
+    _playbackSubscription = _player.playbackEventStream.listen((event) {
+      playbackState.add(
+        playbackState.value.copyWith(
+          controls: _controls,
+          systemActions: const {
+            MediaAction.seek,
+            MediaAction.seekForward,
+            MediaAction.seekBackward,
+          },
+          androidCompactActionIndices: const [0, 1, 2],
+          processingState: _mapProcessingState(event.processingState),
+          playing: _player.playing,
+          updatePosition: event.updatePosition,
+          bufferedPosition: event.bufferedPosition,
+          speed: _player.speed,
+          queueIndex: event.currentIndex,
+        ),
+      );
     });
 
-    _player.processingStateStream.listen((state) {
+    _processingSubscription = _player.processingStateStream.listen((state) {
       if (state == ProcessingState.completed) {
-        skipToNext();
+        final index = _player.currentIndex ?? 0;
+        if (index < _queue.length - 1) {
+          unawaited(skipToNext());
+        } else {
+          playbackState.add(
+            playbackState.value.copyWith(
+              playing: false,
+              processingState: AudioProcessingState.completed,
+              controls: _controls,
+            ),
+          );
+        }
       }
     });
   }
 
+  AudioProcessingState _mapProcessingState(ProcessingState state) {
+    switch (state) {
+      case ProcessingState.idle:
+        return AudioProcessingState.idle;
+      case ProcessingState.loading:
+        return AudioProcessingState.loading;
+      case ProcessingState.buffering:
+        return AudioProcessingState.buffering;
+      case ProcessingState.ready:
+        return AudioProcessingState.ready;
+      case ProcessingState.completed:
+        return AudioProcessingState.completed;
+    }
+  }
+
+  List<MediaControl> get _controls => _player.playing
+      ? const [
+          MediaControl.skipToPrevious,
+          MediaControl.pause,
+          MediaControl.skipToNext,
+          MediaControl.stop,
+        ]
+      : const [
+          MediaControl.skipToPrevious,
+          MediaControl.play,
+          MediaControl.skipToNext,
+          MediaControl.stop,
+        ];
+
   @override
   Future<void> play() async {
     await _player.play();
-    playbackState.add(playbackState.value.copyWith(
-      playing: true,
-      controls: _computeControls(),
-    ));
   }
 
   @override
   Future<void> pause() async {
     await _player.pause();
-    playbackState.add(playbackState.value.copyWith(
-      playing: false,
-      controls: _computeControls(),
-    ));
   }
 
   @override
   Future<void> stop() async {
     await _player.stop();
-    playbackState.add(playbackState.value.copyWith(
-      playing: false,
-      controls: const [],
-    ));
+    await super.stop();
   }
 
   @override
   Future<void> skipToNext() async {
-    await _player.seekToNext();
-    final index = _player.currentIndex ?? 0;
-    if (index < _queue.length) {
-      mediaItem.add(_queue[index]);
+    if (_queue.isEmpty || (_player.currentIndex ?? 0) >= _queue.length - 1) {
+      return;
     }
+    await _player.seekToNext();
+    _publishCurrentItem();
   }
 
   @override
   Future<void> skipToPrevious() async {
-    await _player.seekToPrevious();
-    final index = _player.currentIndex ?? 0;
-    if (index < _queue.length) {
-      mediaItem.add(_queue[index]);
+    if (_queue.isEmpty || (_player.currentIndex ?? 0) <= 0) {
+      return;
     }
+    await _player.seekToPrevious();
+    _publishCurrentItem();
   }
 
   @override
-  Future<void> seek(Duration position) async {
-    await _player.seek(position);
-  }
+  Future<void> seek(Duration position) => _player.seek(position);
 
-  Future<void> setQueue(List<MediaItem> queue) async {
-    _queue = queue;
-    final sources = queue.map((item) {
+  Future<void> setQueue(
+    List<MediaItem> items, {
+    int initialIndex = 0,
+  }) async {
+    _queue = List<MediaItem>.unmodifiable(items);
+    super.setQueue(_queue);
+
+    if (_queue.isEmpty) {
+      await _player.stop();
+      mediaItem.add(null);
+      return;
+    }
+
+    final sources = _queue.map((item) {
       final url = item.extras?['url'] as String?;
-      if (url == null) throw Exception('URL missing for media item');
+      if (url == null || url.isEmpty) {
+        throw Exception('URL missing for media item');
+      }
       return AudioSource.uri(
         Uri.parse(url),
         tag: item,
       );
     }).toList();
 
+    final safeIndex = initialIndex.clamp(0, _queue.length - 1).toInt();
     await _player.setAudioSource(
       ConcatenatingAudioSource(children: sources),
-      initialIndex: 0,
+      initialIndex: safeIndex,
+      preload: true,
     );
-
-    if (queue.isNotEmpty) {
-      mediaItem.add(queue.first);
-    }
+    _publishCurrentItem();
   }
 
+  @override
   Future<void> skipToQueueItem(int index) async {
     if (index < 0 || index >= _queue.length) return;
     await _player.seek(Duration.zero, index: index);
-    mediaItem.add(_queue[index]);
+    _publishCurrentItem();
   }
 
-  List<MediaControl> _computeControls() {
-    final isPlaying = playbackState.value.playing;
-    if (isPlaying) {
-      return [
-        MediaControl.skipToPrevious,
-        MediaControl.pause,
-        MediaControl.skipToNext,
-        MediaControl.stop,
-      ];
-    } else {
-      return [
-        MediaControl.skipToPrevious,
-        MediaControl.play,
-        MediaControl.skipToNext,
-        MediaControl.stop,
-      ];
+  void _publishCurrentItem() {
+    final index = _player.currentIndex ?? 0;
+    if (index >= 0 && index < _queue.length) {
+      mediaItem.add(_queue[index]);
     }
   }
 
   @override
   Future<void> onDestroy() async {
+    await _playbackSubscription?.cancel();
+    await _processingSubscription?.cancel();
     await _player.dispose();
+    await super.onDestroy();
   }
 
   Duration get duration => _player.duration ?? Duration.zero;
   Duration get position => _player.position;
 }
 
-// ================================
-// AudioPlayerService (يورث ChangeNotifier)
-// ================================
 class AudioPlayerService extends ChangeNotifier {
   static final AudioPlayerService _instance = AudioPlayerService._internal();
+
   factory AudioPlayerService() => _instance;
+
   AudioPlayerService._internal();
 
   static AudioPlayerService get instance => _instance;
 
   late AudioPlayerHandler _handler;
   bool _isPlaying = false;
+  MediaItem? _currentItem;
+  StreamSubscription<PlaybackState>? _playbackSubscription;
+  StreamSubscription<MediaItem?>? _mediaItemSubscription;
 
   Future<void> init(AudioPlayerHandler handler) async {
+    await _playbackSubscription?.cancel();
+    await _mediaItemSubscription?.cancel();
     _handler = handler;
-    _handler.playbackState.listen((state) {
+
+    _playbackSubscription = _handler.playbackState.listen((state) {
       _isPlaying = state.playing;
+      notifyListeners();
+    });
+
+    _mediaItemSubscription = _handler.mediaItem.listen((item) {
+      _currentItem = item;
       notifyListeners();
     });
   }
@@ -162,61 +213,64 @@ class AudioPlayerService extends ChangeNotifier {
 
   void togglePlayPause() {
     if (_isPlaying) {
-      _handler.pause();
+      unawaited(_handler.pause());
     } else {
-      _handler.play();
+      unawaited(_handler.play());
     }
   }
 
-  Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
-    final items = <MediaItem>[];
+  Future<void> playLecture(
+    Lecture lecture, {
+    List<Lecture>? queue,
+  }) async {
+    final lectures = queue == null || queue.isEmpty ? [lecture] : queue;
 
-    if (queue != null && queue.isNotEmpty) {
-      items.addAll(queue.map((lec) => MediaItem(
-            id: lec.identifier,
-            title: lec.title,
+    final items = lectures
+        .map(
+          (item) => MediaItem(
+            id: item.identifier,
+            title: item.title,
             artist: 'الشيخ د. محمد الأمين إسماعيل',
-            album: lec.section.isNotEmpty ? lec.section : 'محاضرات',
-            extras: {'url': lec.audioUrl},
-          )));
-    } else {
-      items.add(MediaItem(
-        id: lecture.identifier,
-        title: lecture.title,
-        artist: 'الشيخ د. محمد الأمين إسماعيل',
-        album: lecture.section.isNotEmpty ? lecture.section : 'محاضرات',
-        extras: {'url': lecture.audioUrl},
-      ));
-    }
+            album: item.section.isEmpty ? 'محاضرات' : item.section,
+            extras: {'url': item.audioUrl},
+          ),
+        )
+        .toList();
 
-    await _handler.setQueue(items);
+    // الاعتماد على الرابط يمنع تشغيل أول ملف بالخطأ عند وجود كاش قديم.
+    final startIndex = lectures.indexWhere(
+      (item) => item.audioUrl == lecture.audioUrl,
+    );
 
-    int startIndex = 0;
-    if (queue != null && queue.isNotEmpty) {
-      startIndex = queue.indexWhere((lec) => lec.identifier == lecture.identifier);
-      if (startIndex == -1) startIndex = 0;
-    }
-
-    if (startIndex > 0) {
-      await _handler.skipToQueueItem(startIndex);
-    }
+    await _handler.setQueue(
+      items,
+      initialIndex: startIndex < 0 ? 0 : startIndex,
+    );
     await _handler.play();
   }
 
-  Future<void> pause() async => _handler.pause();
-  Future<void> stop() async => _handler.stop();
-  Future<void> play() async => _handler.play();
-  Future<void> next() async => _handler.skipToNext();
-  Future<void> previous() async => _handler.skipToPrevious();
+  Future<void> pause() => _handler.pause();
+  Future<void> stop() => _handler.stop();
+  Future<void> play() => _handler.play();
+  Future<void> next() => _handler.skipToNext();
+  Future<void> previous() => _handler.skipToPrevious();
 
   Lecture? get currentLecture {
-    final item = _handler.mediaItem.value;
+    final item = _currentItem ?? _handler.mediaItem.value;
     if (item == null) return null;
+
     return Lecture(
       title: item.title,
       section: item.album ?? '',
       audioUrl: item.extras?['url'] as String? ?? '',
       identifier: item.id,
     );
+  }
+
+  @override
+  void dispose() {
+    unawaited(_playbackSubscription?.cancel());
+    unawaited(_mediaItemSubscription?.cancel());
+    super.dispose();
   }
 }
