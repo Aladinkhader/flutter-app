@@ -6,13 +6,9 @@ import 'services/favorites_service.dart';
 import 'services/audio_player_service.dart';
 import 'services/downloads_service.dart';
 
-// تم إزالة السطر: late AudioPlayerHandler audioHandler;
-// لأن AudioPlayerHandler معرف داخل audio_player_service.dart
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // تهيئة AudioService مباشرة باستخدام AudioPlayerHandler من audio_player_service.dart
   final audioHandler = await AudioService.init(
     builder: () => AudioPlayerHandler(),
     config: const AudioServiceConfig(
@@ -28,7 +24,6 @@ Future<void> main() async {
     ),
   );
 
-  // تمرير المعالج إلى AudioPlayerService
   await AudioPlayerService.instance.init(audioHandler);
 
   ErrorWidget.builder = (FlutterErrorDetails details) {
