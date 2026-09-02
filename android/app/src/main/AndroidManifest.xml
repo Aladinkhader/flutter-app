@@ -1,9 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.sheikhapp.temp_scaffold">
 
-    <!-- صلاحيات Android 13+ للإشعارات -->
+    <!-- صلاحيات التشغيل والإشعارات -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <!-- صلاحيات Foreground Service المطلوبة -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -34,7 +33,7 @@
             </intent-filter>
         </activity>
 
-        <!-- خدمة just_audio_background -->
+        <!-- خدمة AudioService لستارة الإشعارات -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"
             android:exported="true"
@@ -43,6 +42,15 @@
                 <action android:name="android.media.browse.MediaBrowserService"/>
             </intent-filter>
         </service>
+
+        <!-- مستقبل أزرار الوسائط للمستقبل الإشعار -->
+        <receiver
+            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
 
         <meta-data
             android:name="flutterEmbedding"
