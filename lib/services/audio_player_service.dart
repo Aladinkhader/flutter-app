@@ -1,13 +1,13 @@
 import 'package:just_audio/just_audio.dart';
-import 'dart:async';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import '../models/lecture.dart';
+import 'downloads_service.dart';
 
 class AudioPlayerService extends ChangeNotifier {
   static final AudioPlayerService _instance = AudioPlayerService._internal();
   factory AudioPlayerService() => _instance;
   AudioPlayerService._internal();
-
   static AudioPlayerService get instance => _instance;
 
   final AudioPlayer _player = AudioPlayer();
@@ -16,125 +16,108 @@ class AudioPlayerService extends ChangeNotifier {
   Lecture? _currentLecture;
   Lecture? get currentLecture => _currentLecture;
 
-  List<Lecture> _lectureQueue = [];
-  int _currentIndex = 0;
-  bool _isPlaying = false;
+  List<Lecture> _queue = [];
+  bool _repeat = false;
 
-  bool get isPlaying => _isPlaying;
-  int get currentIndex => _currentIndex;
-
+  bool get isPlaying => _player.playing;
+  bool get isRepeat => _repeat;
   Duration get position => _player.position;
   Duration get duration => _player.duration ?? Duration.zero;
 
-  bool get hasNext => _player.hasNext;
-  bool get hasPrevious => _player.hasPrevious;
-
   Future<void> init() async {
     _player.playerStateStream.listen((state) {
-      _isPlaying = state.playing;
       notifyListeners();
-    });
-
-    _player.positionStream.listen((_) {
-      notifyListeners();
-    });
-
-    _player.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) {
-        _next();
+      if (state.processingState == ProcessingState.completed) {
+        if (_repeat) {
+          _player.seek(Duration.zero);
+          _player.play();
+        } else {
+          playNext();
+        }
       }
     });
-
-    _player.currentIndexStream.listen((index) {
-      if (index != null && _lectureQueue.isNotEmpty && index < _lectureQueue.length) {
-        _currentIndex = index;
-        _currentLecture = _lectureQueue[index];
-        notifyListeners();
-      }
-    });
+    _player.positionStream.listen((_) => notifyListeners());
   }
 
   Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
+    if (queue != null) _queue = queue;
+
+    if (_currentLecture?.audioUrl == lecture.audioUrl) {
+      await togglePlayPause();
+      return;
+    }
     _currentLecture = lecture;
-    _lectureQueue = (queue != null && queue.isNotEmpty) ? queue : [lecture];
-    _currentIndex = _lectureQueue.indexOf(lecture);
-    if (_currentIndex == -1) _currentIndex = 0;
+    notifyListeners();
 
-    final audioSources = _lectureQueue.map((lec) {
-      return AudioSource.uri(
-        Uri.parse(lec.audioUrl),
+    try {
+      final localPath = DownloadsService.instance.localPathFor(lecture);
+      final tag = MediaItem(
+        id: lecture.audioUrl,
+        title: lecture.title,
+        artist: lecture.section,
+        album: 'الشيخ د. محمد الأمين إسماعيل',
       );
-    }).toList();
 
-    await _player.setAudioSource(
-      ConcatenatingAudioSource(children: audioSources),
-      initialIndex: _currentIndex,
-    );
-
-    await play();
-    notifyListeners();
-  }
-
-  Future<void> play() async {
-    await _player.play();
-    _isPlaying = true;
-    notifyListeners();
-  }
-
-  Future<void> pause() async {
-    await _player.pause();
-    _isPlaying = false;
+      if (localPath != null) {
+        await _player.setAudioSource(
+          AudioSource.file(localPath, tag: tag),
+        );
+      } else {
+        await _player.setAudioSource(
+          AudioSource.uri(Uri.parse(lecture.audioUrl), tag: tag),
+        );
+      }
+      await _player.play();
+    } catch (_) {}
     notifyListeners();
   }
 
   Future<void> togglePlayPause() async {
-    if (_isPlaying) {
-      await pause();
+    if (_player.playing) {
+      await _player.pause();
     } else {
-      await play();
+      await _player.play();
     }
   }
 
-  Future<void> stop() async {
-    await _player.stop();
-    _isPlaying = false;
+  Future<void> seek(Duration position) => _player.seek(position);
+
+  Future<void> skipForward() async {
+    final p = position + const Duration(seconds: 10);
+    await _player.seek(p > duration ? duration : p);
+  }
+
+  Future<void> skipBackward() async {
+    final p = position - const Duration(seconds: 10);
+    await _player.seek(p < Duration.zero ? Duration.zero : p);
+  }
+
+  void toggleRepeat() {
+    _repeat = !_repeat;
     notifyListeners();
   }
 
-  Future<void> _next() async {
-    if (_currentIndex < _lectureQueue.length - 1) {
-      _currentIndex++;
-      _currentLecture = _lectureQueue[_currentIndex];
-      await _player.seekToNext();
-      notifyListeners();
-    } else {
-      await stop();
-    }
+  bool get hasNext {
+    if (_currentLecture == null || _queue.isEmpty) return false;
+    final i = _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    return i != -1 && i < _queue.length - 1;
   }
 
-  Future<void> next() async {
-    if (_player.hasNext) {
-      await _player.seekToNext();
-    }
+  bool get hasPrevious {
+    if (_currentLecture == null || _queue.isEmpty) return false;
+    final i = _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    return i > 0;
   }
 
-  Future<void> playNext() async => next();
-
-  Future<void> previous() async {
-    if (_player.hasPrevious) {
-      await _player.seekToPrevious();
-    }
+  Future<void> playNext() async {
+    if (!hasNext) return;
+    final i = _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    await playLecture(_queue[i + 1], queue: _queue);
   }
 
-  Future<void> playPrevious() async => previous();
-
-  Future<void> seek(Duration position) async {
-    await _player.seek(position);
-  }
-
-  @override
-  void dispose() {
-    _player.dispose();
-    super.dispose();
+  Future<void> playPrevious() async {
+    if (!hasPrevious) return;
+    final i = _queue.indexWhere((l) => l.audioUrl == _currentLecture!.audioUrl);
+    await playLecture(_queue[i - 1], queue: _queue);
   }
 }
