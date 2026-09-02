@@ -12,14 +12,13 @@ dependencies:
   cupertino_icons: ^1.0.6
   http: ^1.2.2
   just_audio: ^0.9.40
-  just_audio_background: ^0.0.1-beta.13      # هذه هي المكتبة الأساسية
-  # just_audio_background: ^0.0.1-beta.11  <-- تم إزالتها
+  audio_service: ^0.18.18
   shared_preferences: ^2.3.2
   google_fonts: ^6.2.1
   shimmer: ^3.0.0
   path_provider: ^2.1.4
   dio: ^5.7.0
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -27,6 +26,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
   assets:
     - assets/images/
