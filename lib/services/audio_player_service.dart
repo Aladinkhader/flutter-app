@@ -4,24 +4,21 @@ import 'package:just_audio/just_audio.dart';
 import '../models/lecture.dart';
 
 // ================================
-// تعريف AudioPlayerHandler داخل نفس الملف
+// AudioPlayerHandler (متوافق مع audio_service 0.18.19)
 // ================================
 class AudioPlayerHandler extends BaseAudioHandler {
   final AudioPlayer _player = AudioPlayer();
+  List<MediaItem> _queue = [];
 
   AudioPlayerHandler() {
     _player.playbackEventStream.listen((event) {
+      // تحديث حالة التشغيل (بدون androidCompactDeviceActions)
       playbackState.add(playbackState.value.copyWith(
         controls: _computeControls(),
         systemActions: const {
           MediaAction.seek,
           MediaAction.seekForward,
           MediaAction.seekBackward,
-        },
-        androidCompactDeviceActions: const {
-          MediaAction.play,
-          MediaAction.pause,
-          MediaAction.stop,
         },
       ));
     });
@@ -63,11 +60,20 @@ class AudioPlayerHandler extends BaseAudioHandler {
   @override
   Future<void> skipToNext() async {
     await _player.seekToNext();
+    // تحديث العنصر الحالي بعد التخطي
+    final index = _player.currentIndex ?? 0;
+    if (index < _queue.length) {
+      mediaItem.add(_queue[index]);
+    }
   }
 
   @override
   Future<void> skipToPrevious() async {
     await _player.seekToPrevious();
+    final index = _player.currentIndex ?? 0;
+    if (index < _queue.length) {
+      mediaItem.add(_queue[index]);
+    }
   }
 
   @override
@@ -75,8 +81,9 @@ class AudioPlayerHandler extends BaseAudioHandler {
     await _player.seek(position);
   }
 
-  @override
+  // دالة لتعيين قائمة التشغيل (بدلاً من super.setQueue)
   Future<void> setQueue(List<MediaItem> queue) async {
+    _queue = queue;
     final sources = queue.map((item) {
       final url = item.extras?['url'] as String?;
       if (url == null) throw Exception('URL missing for media item');
@@ -91,44 +98,41 @@ class AudioPlayerHandler extends BaseAudioHandler {
       initialIndex: 0,
     );
 
-    super.setQueue(queue);
     if (queue.isNotEmpty) {
       mediaItem.add(queue.first);
     }
   }
 
-  @override
   Future<void> skipToQueueItem(int index) async {
+    if (index < 0 || index >= _queue.length) return;
     await _player.seek(Duration.zero, index: index);
-    final queue = this.queue.value;
-    if (index >= 0 && index < queue.length) {
-      mediaItem.add(queue[index]);
-    }
+    mediaItem.add(_queue[index]);
   }
 
-  Set<MediaControl> _computeControls() {
+  // إرجاع List بدلاً من Set
+  List<MediaControl> _computeControls() {
     final isPlaying = playbackState.value.playing;
     if (isPlaying) {
-      return {
+      return [
         MediaControl.skipToPrevious,
         MediaControl.pause,
         MediaControl.skipToNext,
         MediaControl.stop,
-      };
+      ];
     } else {
-      return {
+      return [
         MediaControl.skipToPrevious,
         MediaControl.play,
         MediaControl.skipToNext,
         MediaControl.stop,
-      };
+      ];
     }
   }
 
   @override
   Future<void> onDestroy() async {
     await _player.dispose();
-    super.onDestroy();
+    // لا حاجة لاستدعاء super.onDestroy() لأنه غير موجود
   }
 }
 
@@ -154,7 +158,7 @@ class AudioPlayerService {
 
     if (queue != null && queue.isNotEmpty) {
       items.addAll(queue.map((lec) => MediaItem(
-            id: lec.identifier,  // استخدام identifier كـ id
+            id: lec.identifier,          // استخدم identifier
             title: lec.title,
             artist: 'الشيخ د. محمد الأمين إسماعيل',
             album: lec.section.isNotEmpty ? lec.section : 'محاضرات',
@@ -191,12 +195,10 @@ class AudioPlayerService {
   Future<void> next() async => _handler.skipToNext();
   Future<void> previous() async => _handler.skipToPrevious();
 
-  // دوال إضافية للتحكم
   bool get isPlaying => _handler.playbackState.value.playing;
   Duration get currentPosition => _handler.playbackState.value.position;
   Duration get duration => _handler.playbackState.value.duration ?? Duration.zero;
 
-  // الحصول على المحاضرة الحالية
   Lecture? get currentLecture {
     final item = _handler.mediaItem.value;
     if (item == null) return null;
