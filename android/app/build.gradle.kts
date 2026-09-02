@@ -5,8 +5,7 @@ plugins {
 
 android {
     namespace = "com.sheikhapp.temp_scaffold"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 34
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -16,7 +15,7 @@ android {
     defaultConfig {
         applicationId = "com.sheikhapp.temp_scaffold"
         minSdk = 21
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -32,10 +31,6 @@ kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
-}
-
-dependencies {
-    // تدار مكتبات الصوت عبر إضافات Flutter المحددة في pubspec.yaml
 }
 
 flutter {
