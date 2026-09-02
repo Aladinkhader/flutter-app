@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
-import '../services/audio_player_service.dart';
 
 class DebugLogScreen extends StatefulWidget {
   const DebugLogScreen({super.key});
@@ -20,41 +19,17 @@ class _DebugLogScreenState extends State<DebugLogScreen> {
           backgroundColor: AppColors.background,
           title: const Text('سجل التشخيص',
               style: TextStyle(color: Colors.white, fontSize: 14)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              onPressed: () => setState(() {}),
-            ),
-          ],
         ),
-        body: DebugLog.entries.isEmpty
-            ? const Center(
-                child: Text(
-                  'لا يوجد سجل بعد.\nشغّل محاضرة ثم ارجع هنا واضغط تحديث.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: DebugLog.entries.length,
-                itemBuilder: (context, index) {
-                  final entry =
-                      DebugLog.entries[DebugLog.entries.length - 1 - index];
-                  final isError = entry.contains('ERROR');
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: SelectableText(
-                      entry,
-                      style: TextStyle(
-                        color: isError ? Colors.redAccent : Colors.greenAccent,
-                        fontSize: 11,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  );
-                },
-              ),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'أداة التشخيص المؤقتة لم تعد مستخدمة بعد الانتقال إلى just_audio_background.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ),
+        ),
       ),
     );
   }
