@@ -13,7 +13,6 @@ Future<void> main() async {
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.sheikhapp.audio',
     androidNotificationChannelName: 'تشغيل المحاضرات',
-    androidNotificationDescription: 'التحكم في تشغيل المحاضرات الصوتية',
     androidNotificationIcon: 'notification_icon',
     androidShowNotificationBadge: false,
     androidNotificationOngoing: true,
