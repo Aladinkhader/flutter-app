@@ -5,7 +5,6 @@ plugins {
 }
 
 import java.util.Properties
-import java.io.FileInputStream
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
@@ -27,12 +26,16 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+        }
     }
 
     sourceSets {
-        getByName("main").java.srcDirs("src/main/kotlin")
+        getByName("main") {
+            java.srcDir("src/main/kotlin")
+        }
     }
 
     defaultConfig {
