@@ -19,21 +19,33 @@ class AudioItem {
     this.artUrl,
     required this.url,
   });
+}
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'artist': artist,
-    'album': album,
-    'artUrl': artUrl,
-    'url': url,
-  };
+// كلاس Lecture مؤقت للتوافق (سيتم استيراده من models لاحقاً)
+// لكننا سنعرفه هنا لتجنب أخطاء الاستيراد
+class Lecture {
+  final int id;
+  final String title;
+  final String? sheikhName;
+  final String? imageUrl;
+  final String audioUrl;
+
+  Lecture({
+    required this.id,
+    required this.title,
+    this.sheikhName,
+    this.imageUrl,
+    required this.audioUrl,
+  });
 }
 
 class AudioPlayerService {
   static final AudioPlayerService _instance = AudioPlayerService._internal();
   factory AudioPlayerService() => _instance;
   AudioPlayerService._internal();
+
+  // إضافة getter instance للتوافق مع الكود القديم
+  static AudioPlayerService get instance => _instance;
 
   final AudioPlayer _player = AudioPlayer();
   AudioPlayer get player => _player;
@@ -49,6 +61,35 @@ class AudioPlayerService {
   bool get isPlaying => _isPlaying;
   int get currentIndex => _currentIndex;
   List<AudioItem> get queue => _queue;
+
+  // دالة playLecture للتوافق مع الكود القديم
+  Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
+    if (queue != null && queue.isNotEmpty) {
+      // تحويل القائمة إلى AudioItem
+      final items = queue.map((lec) => AudioItem(
+        id: lec.id.toString(),
+        title: lec.title,
+        artist: lec.sheikhName ?? 'الشيخ د. محمد الأمين إسماعيل',
+        album: 'محاضرات',
+        artUrl: lec.imageUrl,
+        url: lec.audioUrl,
+      )).toList();
+      final startIndex = queue.indexOf(lecture);
+      setQueue(items, startIndex: startIndex);
+    } else {
+      // تشغيل محاضرة واحدة فقط
+      final item = AudioItem(
+        id: lecture.id.toString(),
+        title: lecture.title,
+        artist: lecture.sheikhName ?? 'الشيخ د. محمد الأمين إسماعيل',
+        album: 'محاضرات',
+        artUrl: lecture.imageUrl,
+        url: lecture.audioUrl,
+      );
+      setQueue([item], startIndex: 0);
+    }
+    await play();
+  }
 
   Future<void> init() async {
     await _player.setAudioSource(
@@ -164,23 +205,4 @@ class AudioPlayerService {
     _playbackStateController.close();
     _currentIndexController.close();
   }
-}
-
-// دالة مساعدة لإنشاء AudioItem من البيانات
-AudioItem createAudioItem({
-  required String id,
-  required String title,
-  String? artist,
-  String? album,
-  String? artUrl,
-  required String url,
-}) {
-  return AudioItem(
-    id: id,
-    title: title,
-    artist: artist ?? 'الشيخ د. محمد الأمين إسماعيل',
-    album: album ?? 'محاضرات',
-    artUrl: artUrl,
-    url: url,
-  );
 }
