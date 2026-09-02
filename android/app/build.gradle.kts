@@ -1,6 +1,5 @@
 plugins {
     id("com.android.application")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -16,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.sheikhapp.temp_scaffold"
-        minSdk = flutter.minSdkVersion
+        minSdk = 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -36,11 +35,7 @@ kotlin {
 }
 
 dependencies {
-    // Android Media3: المشغل الأصلي وجلسة الوسائط وإشعار MediaStyle.
-    val media3Version = "1.11.0"
-    implementation("androidx.media3:media3-exoplayer:$media3Version")
-    implementation("androidx.media3:media3-session:$media3Version")
-    implementation("androidx.media3:media3-common:$media3Version")
+    // تدار مكتبات الصوت عبر إضافات Flutter المحددة في pubspec.yaml
 }
 
 flutter {
