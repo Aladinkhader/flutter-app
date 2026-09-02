@@ -37,7 +37,7 @@ Future<void> main() async {
         androidShowNotificationBadge: false,
         androidNotificationClickStartsActivity: true,
         androidNotificationOngoing: true,
-        androidStopForegroundOnPause: false,
+        androidStopForegroundOnPause: true,
         androidResumeOnClick: true,
       ),
     );
