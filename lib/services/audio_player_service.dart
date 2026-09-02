@@ -1,6 +1,7 @@
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'dart:async';
+import '../models/lecture.dart';
 
 // كلاس مخصص لبيانات الصوت (بديل MediaItem)
 class AudioItem {
@@ -21,30 +22,12 @@ class AudioItem {
   });
 }
 
-// كلاس Lecture مؤقت للتوافق (سيتم استيراده من models لاحقاً)
-// لكننا سنعرفه هنا لتجنب أخطاء الاستيراد
-class Lecture {
-  final int id;
-  final String title;
-  final String? sheikhName;
-  final String? imageUrl;
-  final String audioUrl;
-
-  Lecture({
-    required this.id,
-    required this.title,
-    this.sheikhName,
-    this.imageUrl,
-    required this.audioUrl,
-  });
-}
-
 class AudioPlayerService {
   static final AudioPlayerService _instance = AudioPlayerService._internal();
   factory AudioPlayerService() => _instance;
   AudioPlayerService._internal();
 
-  // إضافة getter instance للتوافق مع الكود القديم
+  // getter instance للتوافق مع الكود القديم
   static AudioPlayerService get instance => _instance;
 
   final AudioPlayer _player = AudioPlayer();
@@ -65,7 +48,6 @@ class AudioPlayerService {
   // دالة playLecture للتوافق مع الكود القديم
   Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
     if (queue != null && queue.isNotEmpty) {
-      // تحويل القائمة إلى AudioItem
       final items = queue.map((lec) => AudioItem(
         id: lec.id.toString(),
         title: lec.title,
@@ -77,7 +59,6 @@ class AudioPlayerService {
       final startIndex = queue.indexOf(lecture);
       setQueue(items, startIndex: startIndex);
     } else {
-      // تشغيل محاضرة واحدة فقط
       final item = AudioItem(
         id: lecture.id.toString(),
         title: lecture.title,
