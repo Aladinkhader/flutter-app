@@ -12,7 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   http: ^1.2.2
   just_audio: ^0.9.40
-  audio_service: ^0.18.15       # هذه هي المكتبة الأساسية
+  just_audio_background: ^0.0.1-beta.13      # هذه هي المكتبة الأساسية
   # just_audio_background: ^0.0.1-beta.11  <-- تم إزالتها
   shared_preferences: ^2.3.2
   google_fonts: ^6.2.1
