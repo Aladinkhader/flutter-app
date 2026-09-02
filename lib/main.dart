@@ -39,18 +39,14 @@ Future<void> main() async {
     audioHandler = await AudioService.init(
       builder: () => AudioPlayerHandler(),
       config: const AudioServiceConfig(
-        androidNotificationChannelId:
-            'com.sheikhapp.audio',
-        androidNotificationChannelName:
-            'تشغيل المحاضرات',
-        androidNotificationChannelDescription:
-            'التحكم في تشغيل المحاضرات الصوتية',
-        androidNotificationIcon:
-            'mipmap/ic_launcher',
+        androidNotificationChannelId: 'com.sheikhapp.audio',
+        androidNotificationChannelName: 'تشغيل المحاضرات',
+        androidNotificationChannelDescription: 'التحكم في تشغيل المحاضرات الصوتية',
+        androidNotificationIcon: 'notification_icon', // <-- التغيير
         androidShowNotificationBadge: false,
         androidNotificationClickStartsActivity: true,
         androidNotificationOngoing: true,
-        androidStopForegroundOnPause: true,   // <-- التغيير: false → true
+        androidStopForegroundOnPause: true,
         androidResumeOnClick: true,
       ),
     );
