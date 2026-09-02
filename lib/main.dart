@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/favorites_service.dart';
@@ -8,17 +7,6 @@ import 'services/downloads_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // تهيئة إشعار الخلفية وستارة الإشعارات
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.sheikhapp.audio',
-    androidNotificationChannelName: 'تشغيل المحاضرات',
-    androidNotificationIcon: 'mipmap/ic_launcher',
-    androidShowNotificationBadge: false,
-    androidNotificationOngoing: true,
-    androidStopForegroundOnPause: true,
-    androidResumeOnClick: true,
-  );
 
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Material(
