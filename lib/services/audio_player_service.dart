@@ -6,7 +6,7 @@ import '../models/lecture.dart';
 // ================================
 // تعريف AudioPlayerHandler داخل نفس الملف
 // ================================
-class AudioPlayerHandler extends BaseAudioHandler {  // <-- التصحيح هنا
+class AudioPlayerHandler extends BaseAudioHandler {
   final AudioPlayer _player = AudioPlayer();
 
   AudioPlayerHandler() {
@@ -148,30 +148,37 @@ class AudioPlayerService {
     _handler = handler;
   }
 
+  // دالة تشغيل محاضرة متوافقة مع Lecture الحالي
   Future<void> playLecture(Lecture lecture, {List<Lecture>? queue}) async {
     final items = <MediaItem>[];
+
     if (queue != null && queue.isNotEmpty) {
       items.addAll(queue.map((lec) => MediaItem(
-            id: lec.id.toString(),
+            id: lec.identifier,  // استخدام identifier كـ id
             title: lec.title,
-            artist: lec.sheikhName ?? 'الشيخ د. محمد الأمين إسماعيل',
-            album: 'محاضرات',
-            artUri: lec.imageUrl != null ? Uri.parse(lec.imageUrl!) : null,
+            artist: 'الشيخ د. محمد الأمين إسماعيل',
+            album: lec.section.isNotEmpty ? lec.section : 'محاضرات',
             extras: {'url': lec.audioUrl},
           )));
     } else {
       items.add(MediaItem(
-        id: lecture.id.toString(),
+        id: lecture.identifier,
         title: lecture.title,
-        artist: lecture.sheikhName ?? 'الشيخ د. محمد الأمين إسماعيل',
-        album: 'محاضرات',
-        artUri: lecture.imageUrl != null ? Uri.parse(lecture.imageUrl!) : null,
+        artist: 'الشيخ د. محمد الأمين إسماعيل',
+        album: lecture.section.isNotEmpty ? lecture.section : 'محاضرات',
         extras: {'url': lecture.audioUrl},
       ));
     }
 
     await _handler.setQueue(items);
-    final startIndex = queue != null ? queue.indexOf(lecture) : 0;
+
+    // تحديد الفهرس الصحيح
+    int startIndex = 0;
+    if (queue != null && queue.isNotEmpty) {
+      startIndex = queue.indexWhere((lec) => lec.identifier == lecture.identifier);
+      if (startIndex == -1) startIndex = 0;
+    }
+
     if (startIndex > 0) {
       await _handler.skipToQueueItem(startIndex);
     }
@@ -183,4 +190,21 @@ class AudioPlayerService {
   Future<void> play() async => _handler.play();
   Future<void> next() async => _handler.skipToNext();
   Future<void> previous() async => _handler.skipToPrevious();
+
+  // دوال إضافية للتحكم
+  bool get isPlaying => _handler.playbackState.value.playing;
+  Duration get currentPosition => _handler.playbackState.value.position;
+  Duration get duration => _handler.playbackState.value.duration ?? Duration.zero;
+
+  // الحصول على المحاضرة الحالية
+  Lecture? get currentLecture {
+    final item = _handler.mediaItem.value;
+    if (item == null) return null;
+    return Lecture(
+      title: item.title,
+      section: item.album ?? '',
+      audioUrl: item.extras?['url'] as String? ?? '',
+      identifier: item.id,
+    );
+  }
 }
