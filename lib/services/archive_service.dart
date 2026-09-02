@@ -10,7 +10,7 @@ class ArchiveService {
     'mp-3-160-k_20260814': 'خطب الجمعة',
   };
 
-  static const _cacheKey = 'lectures_cache_v1';
+  static const _cacheKey = 'lectures_cache_v2';
 
   /// يجلب كل المحاضرات من الكاش إن وُجد، ثم يحدّث الكاش من الإنترنت في الخلفية.
   static Future<List<Lecture>> fetchAllLectures({
@@ -66,9 +66,9 @@ class ArchiveService {
     String sectionTitle,
   ) async {
     final url = Uri.parse('https://archive.org/metadata/$identifier');
-    final response = await http
-        .get(url)
-        .timeout(const Duration(seconds: 15));
+    final response = await http.get(url).timeout(
+          const Duration(seconds: 15),
+        );
 
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}');
@@ -93,7 +93,7 @@ class ArchiveService {
           title: title,
           section: sectionTitle,
           audioUrl: audioUrl,
-          identifier: identifier,
+          identifier: '$identifier:$name',
         ),
       );
     }
