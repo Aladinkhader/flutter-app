@@ -6,7 +6,7 @@ import '../models/lecture.dart';
 // ================================
 // تعريف AudioPlayerHandler داخل نفس الملف
 // ================================
-class AudioPlayerHandler extends BaseAudioHandler {
+class AudioPlayerHandler extends BaseAudioHandler {  // <-- التصحيح هنا
   final AudioPlayer _player = AudioPlayer();
 
   AudioPlayerHandler() {
