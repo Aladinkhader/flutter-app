@@ -23,9 +23,19 @@ class AudioPlayerService extends ChangeNotifier {
   bool get isPlaying => _isPlaying;
   int get currentIndex => _currentIndex;
 
+  Duration get position => _player.position;
+  Duration get duration => _player.duration ?? Duration.zero;
+
+  bool get hasNext => _player.hasNext;
+  bool get hasPrevious => _player.hasPrevious;
+
   Future<void> init() async {
     _player.playerStateStream.listen((state) {
       _isPlaying = state.playing;
+      notifyListeners();
+    });
+
+    _player.positionStream.listen((_) {
       notifyListeners();
     });
 
@@ -77,6 +87,14 @@ class AudioPlayerService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> togglePlayPause() async {
+    if (_isPlaying) {
+      await pause();
+    } else {
+      await play();
+    }
+  }
+
   Future<void> stop() async {
     await _player.stop();
     _isPlaying = false;
@@ -100,18 +118,19 @@ class AudioPlayerService extends ChangeNotifier {
     }
   }
 
+  Future<void> playNext() async => next();
+
   Future<void> previous() async {
     if (_player.hasPrevious) {
       await _player.seekToPrevious();
     }
   }
 
+  Future<void> playPrevious() async => previous();
+
   Future<void> seek(Duration position) async {
     await _player.seek(position);
   }
-
-  Duration get currentPosition => _player.position;
-  Duration get duration => _player.duration ?? Duration.zero;
 
   @override
   void dispose() {
