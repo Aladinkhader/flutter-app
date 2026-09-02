@@ -9,23 +9,6 @@ import 'services/downloads_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final audioHandler = await AudioService.init(
-    builder: () => AudioPlayerHandler(),
-    config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.sheikhapp.audio',
-      androidNotificationChannelName: 'تشغيل المحاضرات',
-      androidNotificationChannelDescription: 'التحكم في تشغيل المحاضرات الصوتية',
-      androidNotificationIcon: 'mipmap/ic_launcher',
-      androidShowNotificationBadge: false,
-      androidNotificationClickStartsActivity: true,
-      androidNotificationOngoing: true,
-      androidStopForegroundOnPause: false,
-      androidResumeOnClick: true,
-    ),
-  );
-
-  await AudioPlayerService.instance.init(audioHandler);
-
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Material(
       color: Colors.white,
@@ -43,6 +26,23 @@ Future<void> main() async {
 
   String? initError;
   try {
+    final audioHandler = await AudioService.init(
+      builder: () => AudioPlayerHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.sheikhapp.audio',
+        androidNotificationChannelName: 'تشغيل المحاضرات',
+        androidNotificationChannelDescription:
+            'التحكم في تشغيل المحاضرات الصوتية',
+        androidNotificationIcon: 'mipmap/ic_launcher',
+        androidShowNotificationBadge: false,
+        androidNotificationClickStartsActivity: true,
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: false,
+        androidResumeOnClick: true,
+      ),
+    );
+
+    await AudioPlayerService.instance.init(audioHandler);
     await FavoritesService.instance.init();
     await DownloadsService.instance.init();
   } catch (e, st) {
@@ -54,6 +54,7 @@ Future<void> main() async {
 
 class SheikhApp extends StatelessWidget {
   final String? initError;
+
   const SheikhApp({super.key, this.initError});
 
   @override
