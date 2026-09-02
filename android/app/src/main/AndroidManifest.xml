@@ -1,11 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.sheikhapp.temp_scaffold">
 
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- الصلاحيات المطلوبة للإشعارات والتشغيل في الخلفية -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:label="الشيخ د. محمد الأمين إسماعيل"
@@ -14,6 +15,7 @@
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">
 
+        <!-- النشاط الرئيسي -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -31,6 +33,7 @@
             </intent-filter>
         </activity>
 
+        <!-- خدمة AudioService (المسؤولة عن الإشعار والتشغيل في الخلفية) -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"
             android:exported="true"
@@ -40,6 +43,7 @@
             </intent-filter>
         </service>
 
+        <!-- تعريف FlutterEmbedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
