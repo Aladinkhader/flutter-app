@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:audio_service/audio_service.dart';
-
+import 'package:just_audio_background/just_audio_background.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/favorites_service.dart';
 import 'services/audio_player_service.dart';
 import 'services/downloads_service.dart';
 
-late AudioPlayerHandler audioHandler;
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // تهيئة just_audio_background (بديل AudioService.init)
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.sheikhapp.audio',
+    androidNotificationChannelName: 'تشغيل المحاضرات',
+    androidNotificationDescription: 'التحكم في تشغيل المحاضرات الصوتية',
+    androidNotificationIcon: 'notification_icon',
+    androidShowNotificationBadge: false,
+    androidNotificationOngoing: true,
+    androidStopForegroundOnPause: true,
+    androidResumeOnClick: true,
+  );
 
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Material(
@@ -35,25 +44,7 @@ Future<void> main() async {
   try {
     await FavoritesService.instance.init();
     await DownloadsService.instance.init();
-
-    audioHandler = await AudioService.init(
-      builder: () => AudioPlayerHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.sheikhapp.audio',
-        androidNotificationChannelName: 'تشغيل المحاضرات',
-        androidNotificationChannelDescription: 'التحكم في تشغيل المحاضرات الصوتية',
-        androidNotificationIcon: 'notification_icon', // <-- التغيير
-        androidShowNotificationBadge: false,
-        androidNotificationClickStartsActivity: true,
-        androidNotificationOngoing: true,
-        androidStopForegroundOnPause: true,
-        androidResumeOnClick: true,
-      ),
-    );
-
-    await AudioPlayerService.instance.init(
-      audioHandler,
-    );
+    await AudioPlayerService.instance.init();
   } catch (e, st) {
     initError = '$e\n\n$st';
   }
