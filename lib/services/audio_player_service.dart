@@ -81,14 +81,10 @@ class AudioPlayerHandler extends BaseAudioHandler {
         ];
 
   @override
-  Future<void> play() async {
-    await _player.play();
-  }
+  Future<void> play() => _player.play();
 
   @override
-  Future<void> pause() async {
-    await _player.pause();
-  }
+  Future<void> pause() => _player.pause();
 
   @override
   Future<void> stop() async {
@@ -161,13 +157,6 @@ class AudioPlayerHandler extends BaseAudioHandler {
     if (index >= 0 && index < _queue.length) {
       mediaItem.add(_queue[index]);
     }
-  }
-
-  @override
-  Future<void> onDestroy() async {
-    await _playbackSubscription?.cancel();
-    await _processingSubscription?.cancel();
-    await _player.dispose();
   }
 
   Duration get duration => _player.duration ?? Duration.zero;
