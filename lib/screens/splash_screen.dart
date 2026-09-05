@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import 'main_shell.dart';
 
@@ -73,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Text(
                     'الشيخ د. محمد الأمين إسماعيل',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.tajawal(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: AppColors.mainText,
@@ -165,9 +166,6 @@ class _PulsingAvatarState extends State<_PulsingAvatar>
               child: Image.asset(
                 'assets/images/sheikh.jpg',
                 fit: BoxFit.cover,
-              ),
-            ),
-                ),
               ),
             ),
           ),
