@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 import '../theme/app_colors.dart';
 import '../services/audio_player_service.dart';
 
@@ -13,11 +14,13 @@ class FullPlayerScreen extends StatefulWidget {
 
 class _FullPlayerScreenState extends State<FullPlayerScreen> {
   Timer? _refreshTimer;
+  bool _seeking = false;
+  double _seekValue = 0;
 
   @override
   void initState() {
     super.initState();
-    _refreshTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+    _refreshTimer = Timer.periodic(const Duration(milliseconds: 300), (_) {
       if (mounted) setState(() {});
     });
   }
@@ -39,6 +42,12 @@ class _FullPlayerScreenState extends State<FullPlayerScreen> {
     final audioService = AudioPlayerService.instance;
     final lecture = audioService.currentLecture;
 
+    final durationMs = audioService.duration.inMilliseconds;
+    final positionMs = audioService.position.inMilliseconds;
+    final livePercent =
+        durationMs > 0 ? (positionMs / durationMs).clamp(0.0, 1.0) : 0.0;
+    final displayPercent = _seeking ? _seekValue : livePercent;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -58,29 +67,53 @@ class _FullPlayerScreenState extends State<FullPlayerScreen> {
                   ],
                 ),
                 const Spacer(),
-                Container(
-                  width: 220,
-                  height: 220,
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.cardDark,
-                    border: Border.all(
-                      color: AppColors.primaryTeal.withOpacity(0.4),
-                      width: 3,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.35),
-                        blurRadius: 28,
-                        offset: const Offset(0, 12),
+                GestureDetector(
+                  onPanStart: (_) => setState(() => _seeking = true),
+                  onPanUpdate: (details) {
+                    _updateSeekFromDrag(details.localPosition);
+                  },
+                  onPanEnd: (_) {
+                    if (durationMs > 0) {
+                      audioService.seek(
+                        Duration(
+                            milliseconds: (_seekValue * durationMs).toInt()),
+                      );
+                    }
+                    setState(() => _seeking = false);
+                  },
+                  child: CircularPercentIndicator(
+                    radius: 115,
+                    lineWidth: 6,
+                    percent: displayPercent,
+                    circularStrokeCap: CircularStrokeCap.round,
+                    backgroundColor: AppColors.cardDark,
+                    progressColor: Colors.white,
+                    animation: false,
+                    center: Container(
+                      width: 200,
+                      height: 200,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.cardDark,
+                        border: Border.all(
+                          color: AppColors.primaryTeal.withOpacity(0.4),
+                          width: 3,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.35),
+                            blurRadius: 28,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/sheikh.jpg',
-                      fit: BoxFit.cover,
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/sheikh.jpg',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -112,15 +145,11 @@ class _FullPlayerScreenState extends State<FullPlayerScreen> {
                         const RoundSliderThumbShape(enabledThumbRadius: 6),
                   ),
                   child: Slider(
-                    value: audioService.duration.inMilliseconds > 0
-                        ? audioService.position.inMilliseconds
-                            .clamp(0, audioService.duration.inMilliseconds)
-                            .toDouble()
+                    value: durationMs > 0
+                        ? positionMs.clamp(0, durationMs).toDouble()
                         : 0,
                     min: 0,
-                    max: audioService.duration.inMilliseconds > 0
-                        ? audioService.duration.inMilliseconds.toDouble()
-                        : 1,
+                    max: durationMs > 0 ? durationMs.toDouble() : 1,
                     activeColor: AppColors.primaryTeal,
                     inactiveColor: AppColors.cardDark,
                     onChanged: (value) {
@@ -151,8 +180,9 @@ class _FullPlayerScreenState extends State<FullPlayerScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      onPressed:
-                          audioService.hasPrevious ? audioService.playPrevious : null,
+                      onPressed: audioService.hasPrevious
+                          ? audioService.playPrevious
+                          : null,
                       icon: Icon(Icons.skip_previous_rounded,
                           color: audioService.hasPrevious
                               ? AppColors.secondaryText
@@ -201,6 +231,21 @@ class _FullPlayerScreenState extends State<FullPlayerScreen> {
         ),
       ),
     );
+  }
+
+  void _updateSeekFromDrag(Offset localPosition) {
+    // مركز الدائرة تقريبًا منتصف العنصر (نصف قطر ~115 + سمك الخط)
+    const center = Offset(121, 121);
+    final dx = localPosition.dx - center.dx;
+    final dy = localPosition.dy - center.dy;
+    // زاوية من الأعلى (12 بالساعة) باتجاه عقارب الساعة
+    double angle = (atan2Custom(dy, dx) + 3.14159 / 2) / (2 * 3.14159);
+    if (angle < 0) angle += 1;
+    setState(() => _seekValue = angle.clamp(0.0, 1.0));
+  }
+
+  double atan2Custom(double y, double x) {
+    return Offset(x, y).direction;
   }
 }
 
