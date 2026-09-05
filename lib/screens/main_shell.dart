@@ -18,6 +18,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+  late final List<Widget> _tabs;
 
   final List<String> _titles = const [
     'الرئيسية',
@@ -27,13 +28,17 @@ class _MainShellState extends State<MainShell> {
     'الإعدادات',
   ];
 
-  final List<Widget> _tabs = const [
-    HomeTab(),
-    AllLecturesTab(),
-    CategoriesTab(),
-    DownloadsFavoritesTab(),
-    SettingsTab(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _tabs = [
+      HomeTab(onNavigateToCategories: () => setState(() => _currentIndex = 2)),
+      const AllLecturesTab(),
+      const CategoriesTab(),
+      const DownloadsFavoritesTab(),
+      const SettingsTab(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
