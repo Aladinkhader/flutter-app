@@ -22,6 +22,13 @@ class AudioPlayerService extends ChangeNotifier {
   bool get isRepeat => _repeat;
   Duration get position => _player.position;
   Duration get duration => _player.duration ?? Duration.zero;
+  Future<void> stop() async {
+    await _player.stop();
+    _currentLecture = null;
+    notifyListeners();
+  }
+
+  Future<void> next() => playNext();
 
   Future<void> init() async {
     _player.playerStateStream.listen((state) {
