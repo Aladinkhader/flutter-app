@@ -15,6 +15,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final AnimationController _controller;
   late final Animation<double> _scaleAnim;
   late final Animation<double> _fadeAnim;
+  late final AnimationController _shimmerController;
 
   @override
   void initState() {
@@ -33,7 +34,15 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
 
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+
     _controller.forward();
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _shimmerController.forward();
+    });
 
     Future.delayed(const Duration(milliseconds: 1600), () {
       if (mounted) {
@@ -52,6 +61,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _controller.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -71,14 +81,35 @@ class _SplashScreenState extends State<SplashScreen>
                 const SizedBox(height: 24),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    'الشيخ د. محمد الأمين إسماعيل',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.tajawal(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.mainText,
-                      letterSpacing: 0.5,
+                  child: AnimatedBuilder(
+                    animation: _shimmerController,
+                    builder: (context, child) {
+                      return ShaderMask(
+                        shaderCallback: (bounds) {
+                          final t = _shimmerController.value;
+                          return LinearGradient(
+                            colors: [
+                              AppColors.mainText,
+                              Colors.white,
+                              AppColors.mainText,
+                            ],
+                            stops: const [0.35, 0.5, 0.65],
+                            begin: Alignment(-1.5 + 3 * t, 0),
+                            end: Alignment(-0.5 + 3 * t, 0),
+                          ).createShader(bounds);
+                        },
+                        child: child,
+                      );
+                    },
+                    child: Text(
+                      'الشيخ د. محمد الأمين إسماعيل',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.tajawal(
+                        fontSize: 23,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.mainText,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
