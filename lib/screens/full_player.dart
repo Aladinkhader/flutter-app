@@ -78,11 +78,9 @@ class _FullPlayerScreenState extends State<FullPlayerScreen> {
                     ],
                   ),
                   child: ClipOval(
-                    child: Container(
-                      color: AppColors.cardDark,
-                      child: Icon(Icons.person,
-                          size: 90,
-                          color: AppColors.primaryTeal.withOpacity(0.6)),
+                    child: Image.asset(
+                      'assets/images/sheikh.jpg',
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
