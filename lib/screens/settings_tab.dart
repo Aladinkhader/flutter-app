@@ -57,7 +57,6 @@ class _SettingsTabState extends State<SettingsTab> {
             height: 150,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.cardDark,
               border: Border.all(
                   color: AppColors.primaryTeal.withOpacity(0.4), width: 3),
               boxShadow: [
@@ -68,8 +67,12 @@ class _SettingsTabState extends State<SettingsTab> {
                 ),
               ],
             ),
-            child: Icon(Icons.person,
-                size: 64, color: AppColors.primaryTeal.withOpacity(0.6)),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/sheikh.jpg',
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 28),
