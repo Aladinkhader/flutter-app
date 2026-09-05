@@ -10,7 +10,8 @@ import '../widgets/pulsing_border.dart';
 import 'full_player.dart';
 
 class HomeTab extends StatefulWidget {
-  const HomeTab({super.key});
+  final VoidCallback onNavigateToCategories;
+  const HomeTab({super.key, required this.onNavigateToCategories});
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -58,7 +59,7 @@ class _HomeTabState extends State<HomeTab> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
-        const _WelcomeCard(),
+        _WelcomeCard(onBrowseTap: widget.onNavigateToCategories),
         const SizedBox(height: 24),
         Text(
           'مختارات من المحاضرات',
@@ -125,99 +126,90 @@ class _HomeTabState extends State<HomeTab> {
 }
 
 class _WelcomeCard extends StatefulWidget {
-  const _WelcomeCard();
+  final VoidCallback onBrowseTap;
+  const _WelcomeCard({required this.onBrowseTap});
 
   @override
   State<_WelcomeCard> createState() => _WelcomeCardState();
 }
 
-class _WelcomeCardState extends State<_WelcomeCard> {
-  bool _pressed = false;
+class _WelcomeCardState extends State<_WelcomeCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _autoPulseController;
 
-  void _setPressed(bool value) {
-    setState(() => _pressed = value);
-    if (!value) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) setState(() {});
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    _autoPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _autoPulseController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _setPressed(true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 1.02 : 1.0,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOut,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeOut,
-          transform: Matrix4.translationValues(0, _pressed ? -3 : 0, 0),
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: AppColors.cardGradient,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: _pressed
-                  ? AppColors.primaryTeal
-                  : AppColors.primaryTeal.withOpacity(0.4),
+    return AnimatedBuilder(
+      animation: _autoPulseController,
+      builder: (context, child) {
+        final t = _autoPulseController.value;
+        return Transform.translate(
+          offset: Offset(0, -4 * t),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: AppColors.cardGradient,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.primaryTeal.withOpacity(0.4),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2 + (0.15 * t)),
+                  blurRadius: 14 + (10 * t),
+                  offset: Offset(0, 5 + (5 * t)),
+                ),
+              ],
             ),
-            boxShadow: _pressed
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                    BoxShadow(
-                      color: AppColors.primaryTeal.withOpacity(0.25),
-                      blurRadius: 15,
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+            child: child,
           ),
-          child: Column(
-            children: [
-              Text(
-                'استمع إلى أحدث المواعظ والبرامج والخطب العلمية',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.lightText,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryTeal,
-                  foregroundColor: AppColors.background,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                ),
-                child: const Text(
-                  'تصفح كل الأقسام',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+        );
+      },
+      child: Column(
+        children: [
+          Text(
+            'استمع إلى أحدث المواعظ والبرامج والخطب العلمية',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.lightText,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: widget.onBrowseTap,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryTeal,
+              foregroundColor: AppColors.background,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: const Text(
+              'تصفح كل الأقسام',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }
