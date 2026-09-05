@@ -147,14 +147,16 @@ class _MiniPlayer extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.background,
                     border: Border.all(
                       color: AppColors.primaryTeal.withOpacity(0.5),
                     ),
                   ),
-                  child: Icon(Icons.person,
-                      size: 18,
-                      color: AppColors.primaryTeal.withOpacity(0.7)),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/sheikh.jpg',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -233,15 +235,15 @@ class _TopHeader extends StatelessWidget {
                 height: 46,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.cardDark,
                   border: Border.all(
                     color: AppColors.primaryTeal.withOpacity(0.4),
                   ),
                 ),
-                child: Icon(
-                  Icons.person,
-                  size: 22,
-                  color: AppColors.primaryTeal.withOpacity(0.7),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/sheikh.jpg',
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
