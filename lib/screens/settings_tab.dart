@@ -53,8 +53,8 @@ class _SettingsTabState extends State<SettingsTab> {
       children: [
         Center(
           child: Container(
-            width: 150,
-            height: 150,
+            width: 190,
+            height: 190,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
