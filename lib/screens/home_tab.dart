@@ -7,6 +7,7 @@ import '../services/favorites_service.dart';
 import '../services/downloads_service.dart';
 import '../widgets/shimmer_lecture_card.dart';
 import '../widgets/pulsing_border.dart';
+import '../widgets/glow_border.dart';
 import 'full_player.dart';
 
 class HomeTab extends StatefulWidget {
@@ -154,66 +155,61 @@ class _WelcomeCardState extends State<_WelcomeCard>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _autoPulseController,
-      builder: (context, child) {
-        final t = _autoPulseController.value;
-        return Transform.scale(
-          scale: 1.0 + (0.025 * t),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: AppColors.cardGradient,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.primaryTeal.withOpacity(0.4 + (0.3 * t)),
+    return AnimatedGlowBorder(
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedBuilder(
+        animation: _autoPulseController,
+        builder: (context, child) {
+          final t = _autoPulseController.value;
+          return Transform.scale(
+            scale: 1.0 + (0.025 * t),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: AppColors.cardGradient,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.25 + (0.2 * t)),
+                    blurRadius: 16 + (14 * t),
+                    offset: Offset(0, 6 + (6 * t)),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.25 + (0.2 * t)),
-                  blurRadius: 16 + (14 * t),
-                  offset: Offset(0, 6 + (6 * t)),
-                ),
-                BoxShadow(
-                  color: AppColors.primaryTeal.withOpacity(0.15 * t),
-                  blurRadius: 20 * t,
-                ),
-              ],
+              child: child,
             ),
-            child: child,
-          ),
-        );
-      },
-      child: Column(
-        children: [
-          Text(
-            'استمع إلى أحدث المواعظ والبرامج والخطب العلمية',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.lightText,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: widget.onBrowseTap,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryTeal,
-              foregroundColor: AppColors.background,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          );
+        },
+        child: Column(
+          children: [
+            Text(
+              'استمع إلى أحدث المواعظ والبرامج والخطب العلمية',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.lightText,
+                fontWeight: FontWeight.w500,
               ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-            child: const Text(
-              'تصفح كل الأقسام',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: widget.onBrowseTap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryTeal,
+                foregroundColor: AppColors.background,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: const Text(
+                'تصفح كل الأقسام',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
