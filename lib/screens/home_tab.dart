@@ -158,8 +158,8 @@ class _WelcomeCardState extends State<_WelcomeCard>
       animation: _autoPulseController,
       builder: (context, child) {
         final t = _autoPulseController.value;
-        return Transform.translate(
-          offset: Offset(0, -4 * t),
+        return Transform.scale(
+          scale: 1.0 + (0.025 * t),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -167,13 +167,17 @@ class _WelcomeCardState extends State<_WelcomeCard>
               gradient: AppColors.cardGradient,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.primaryTeal.withOpacity(0.4),
+                color: AppColors.primaryTeal.withOpacity(0.4 + (0.3 * t)),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2 + (0.15 * t)),
-                  blurRadius: 14 + (10 * t),
-                  offset: Offset(0, 5 + (5 * t)),
+                  color: Colors.black.withOpacity(0.25 + (0.2 * t)),
+                  blurRadius: 16 + (14 * t),
+                  offset: Offset(0, 6 + (6 * t)),
+                ),
+                BoxShadow(
+                  color: AppColors.primaryTeal.withOpacity(0.15 * t),
+                  blurRadius: 20 * t,
                 ),
               ],
             ),
