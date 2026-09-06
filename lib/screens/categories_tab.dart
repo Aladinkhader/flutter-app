@@ -101,16 +101,16 @@ class _CategoryCardState extends State<_CategoryCard> {
                   widget.title,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: AppColors.mainText,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   'عرض المحاضرات',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 14,
                     color: AppColors.secondaryText.withOpacity(0.8),
                     fontWeight: FontWeight.w500,
                   ),
