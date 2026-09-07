@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../services/archive_service.dart';
+import '../widgets/glow_border.dart';
 import 'section_lectures_screen.dart';
 
 class CategoriesTab extends StatelessWidget {
@@ -57,65 +58,62 @@ class _CategoryCardState extends State<_CategoryCard> {
           ),
         );
       },
-      child: AnimatedScale(
-        scale: _pressed ? 1.02 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-        child: AnimatedContainer(
+      child: AnimatedGlowBorder(
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedScale(
+          scale: _pressed ? 1.02 : 1.0,
           duration: const Duration(milliseconds: 150),
-          transform: Matrix4.translationValues(0, _pressed ? -4 : 0, 0),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: AppColors.categoryCardGradient,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: _pressed
-                  ? AppColors.primaryTeal.withOpacity(0.6)
-                  : AppColors.primaryTeal.withOpacity(0.2),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            transform: Matrix4.translationValues(0, _pressed ? -4 : 0, 0),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: AppColors.categoryCardGradient,
+              boxShadow: _pressed
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.4),
+                        blurRadius: 22,
+                        offset: const Offset(0, 12),
+                      ),
+                      BoxShadow(
+                        color: AppColors.primaryTeal.withOpacity(0.3),
+                        blurRadius: 18,
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
             ),
-            boxShadow: _pressed
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.4),
-                      blurRadius: 22,
-                      offset: const Offset(0, 12),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.mainText,
                     ),
-                    BoxShadow(
-                      color: AppColors.primaryTeal.withOpacity(0.3),
-                      blurRadius: 18,
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.mainText,
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'عرض المحاضرات',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.secondaryText.withOpacity(0.8),
-                    fontWeight: FontWeight.w500,
+                  const SizedBox(height: 10),
+                  Text(
+                    'عرض المحاضرات',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.secondaryText.withOpacity(0.8),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
