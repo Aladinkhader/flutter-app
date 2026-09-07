@@ -5,6 +5,7 @@ import '../services/downloads_service.dart';
 import '../services/archive_service.dart';
 import 'sheikh_bio_dialog.dart';
 import 'debug_log_screen.dart';
+import '../widgets/glow_border.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -52,25 +53,26 @@ class _SettingsTabState extends State<SettingsTab> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
         Center(
-          child: Container(
-            width: 190,
-            height: 190,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                  color: AppColors.primaryTeal.withOpacity(0.4), width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+          child: AnimatedGlowBorder(
+            borderRadius: BorderRadius.circular(95),
+            borderWidth: 3,
+            child: Container(
+              width: 190,
+              height: 190,
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/sheikh.jpg',
+                  fit: BoxFit.cover,
                 ),
-              ],
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                'assets/images/sheikh.jpg',
-                fit: BoxFit.cover,
               ),
             ),
           ),
