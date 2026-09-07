@@ -1,5 +1,6 @@
-import 'package:just_audio/just_audio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import '../models/lecture.dart';
 import 'downloads_service.dart';
 
@@ -22,6 +23,7 @@ class AudioPlayerService extends ChangeNotifier {
   bool get isRepeat => _repeat;
   Duration get position => _player.position;
   Duration get duration => _player.duration ?? Duration.zero;
+
   Future<void> stop() async {
     await _player.stop();
     _currentLecture = null;
@@ -57,11 +59,23 @@ class AudioPlayerService extends ChangeNotifier {
 
     try {
       final localPath = DownloadsService.instance.localPathFor(lecture);
-      if (localPath != null) {
-        await _player.setFilePath(localPath);
-      } else {
-        await _player.setUrl(lecture.audioUrl);
-      }
+      final Uri audioUri = localPath != null
+          ? Uri.file(localPath)
+          : Uri.parse(lecture.audioUrl);
+
+      // تمرير بيانات الدرس والشيخ والصورة للستارة وشاشة القفل
+      final audioSource = AudioSource.uri(
+        audioUri,
+        tag: MediaItem(
+          id: lecture.audioUrl,
+          album: 'الشيخ د. محمد الأمين إسماعيل',
+          title: lecture.title,
+          artist: 'د. محمد الأمين إسماعيل',
+          artUri: Uri.parse('asset:///assets/images/sheikh.jpg'),
+        ),
+      );
+
+      await _player.setAudioSource(audioSource);
       await _player.play();
     } catch (_) {}
     notifyListeners();
