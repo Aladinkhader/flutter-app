@@ -12,6 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   http: ^1.2.2
   just_audio: ^0.9.40
+  just_audio_background: ^0.0.1-beta.14
   shared_preferences: ^2.3.2
   google_fonts: ^6.2.1
   shimmer: ^3.0.0
