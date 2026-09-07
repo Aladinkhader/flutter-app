@@ -63,7 +63,6 @@ class AudioPlayerService extends ChangeNotifier {
           ? Uri.file(localPath)
           : Uri.parse(lecture.audioUrl);
 
-      // تمرير بيانات الدرس والشيخ والصورة للستارة وشاشة القفل
       final audioSource = AudioSource.uri(
         audioUri,
         tag: MediaItem(
@@ -71,13 +70,14 @@ class AudioPlayerService extends ChangeNotifier {
           album: 'الشيخ د. محمد الأمين إسماعيل',
           title: lecture.title,
           artist: 'د. محمد الأمين إسماعيل',
-          artUri: Uri.parse('asset:///assets/images/sheikh.jpg'),
         ),
       );
 
       await _player.setAudioSource(audioSource);
       await _player.play();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Audio Player Error: $e');
+    }
     notifyListeners();
   }
 
