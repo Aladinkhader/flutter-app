@@ -201,14 +201,17 @@ class _SettingsTabState extends State<SettingsTab> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                'علاء الدين خضر',
-                style: TextStyle(
+
+              // تأثير اللمعان الأخضر المتحرك على اسمك
+              _AnimatedShimmerText(
+                text: 'علاء الدين خضر',
+                style: const TextStyle(
                   color: AppColors.mainText,
                   fontSize: 26,
                   fontWeight: FontWeight.w900,
                 ),
               ),
+
               const SizedBox(height: 18),
               Text(
                 'تواصل معي',
@@ -365,6 +368,70 @@ class _SocialButton extends StatelessWidget {
         border: Border.all(color: color.withOpacity(0.4)),
       ),
       child: Icon(icon, color: color, size: 24),
+    );
+  }
+}
+
+// Widget التأثير المتحرك على الاسم
+class _AnimatedShimmerText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+
+  const _AnimatedShimmerText({
+    required this.text,
+    required this.style,
+  });
+
+  @override
+  State<_AnimatedShimmerText> createState() => _AnimatedShimmerTextState();
+}
+
+class _AnimatedShimmerTextState extends State<_AnimatedShimmerText>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // سرعة الحركة: 1600 مللي ثانية لحركة سلسة وجذابة
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              colors: [
+                AppColors.mainText,
+                AppColors.primaryTeal, // لون أخضر التطبيق نفسه
+                AppColors.mainText,
+              ],
+              stops: const [0.0, 0.5, 1.0],
+              begin: Alignment(-2.0 + (_controller.value * 4.0), 0.0),
+              end: Alignment(-1.0 + (_controller.value * 4.0), 0.0),
+            ).createShader(bounds);
+          },
+          child: Text(
+            widget.text,
+            style: widget.style,
+            textAlign: TextAlign.center,
+          ),
+        );
+      },
     );
   }
 }
