@@ -10,7 +10,7 @@ class ArchiveService {
     'mp-3-160-k_20260814': 'خطب الجمعة',
   };
 
-  static const _cacheKey = 'lectures_cache_v2';
+  static const _cacheKey = 'lectures_cache_v1';
 
   static Future<List<Lecture>> fetchAllLectures({
     bool forceRefresh = false,
@@ -41,8 +41,11 @@ class ArchiveService {
 
     for (final entry in sections.entries) {
       try {
-        final result = await fetchSectionLectures(entry.key, entry.value);
-        all.addAll(result);
+        final sectionLectures = await fetchSectionLectures(
+          entry.key,
+          entry.value,
+        );
+        all.addAll(sectionLectures);
       } catch (e) {
         errors.add('${entry.value}: $e');
       }
@@ -60,9 +63,8 @@ class ArchiveService {
     String sectionTitle,
   ) async {
     final url = Uri.parse('https://archive.org/metadata/$identifier');
-    final response = await http.get(url).timeout(
-          const Duration(seconds: 15),
-        );
+    final response =
+        await http.get(url).timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
       throw Exception('HTTP ${response.statusCode}');
@@ -87,12 +89,46 @@ class ArchiveService {
           title: title,
           section: sectionTitle,
           audioUrl: audioUrl,
-          identifier: '$identifier:$name',
+          identifier: identifier,
         ),
       );
     }
 
+    // نرتب حسب رقم الحلقة المستخرج من العنوان (تصاعديًا)
+    lectures.sort((a, b) {
+      final numA = _extractEpisodeNumber(a.title);
+      final numB = _extractEpisodeNumber(b.title);
+      if (numA != null && numB != null) return numA.compareTo(numB);
+      if (numA != null) return -1;
+      if (numB != null) return 1;
+      return a.title.compareTo(b.title);
+    });
+
     return lectures;
+  }
+
+  /// يستخرج أول رقم موجود بعنوان المحاضرة (زي "الحلقة (05)" -> 5)
+  static int? _extractEpisodeNumber(String title) {
+    final match = RegExp(r'\d+').firstMatch(title);
+    if (match == null) return null;
+    return int.tryParse(match.group(0)!);
+  }
+
+  /// يجيب تشكيلة متنوعة: عدد محدد من المحاضرات من كل قسم (بدل أول ملفات قسم واحد)
+  static Future<List<Lecture>> fetchFeaturedMix({int perSection = 2}) async {
+    final all = await fetchAllLectures();
+    final Map<String, List<Lecture>> bySection = {};
+
+    for (final lecture in all) {
+      bySection.putIfAbsent(lecture.section, () => []).add(lecture);
+    }
+
+    final List<Lecture> mix = [];
+    for (final entry in bySection.entries) {
+      mix.addAll(entry.value.take(perSection));
+    }
+
+    return mix;
   }
 
   static Future<List<Lecture>?> _readCache() async {
