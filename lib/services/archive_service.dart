@@ -115,22 +115,45 @@ class ArchiveService {
   }
 
   /// يجيب تشكيلة متنوعة: عدد محدد من المحاضرات من كل قسم (بدل أول ملفات قسم واحد)
-  static Future<List<Lecture>> fetchFeaturedMix({int perSection = 2}) async {
+  /// يجيب تشكيلة متنوعة ومتداخلة: عدد مخصص من كل قسم، بترتيب ممزوج بينهم
+  static Future<List<Lecture>> fetchFeaturedMix() async {
     final all = await fetchAllLectures();
-    final Map<String, List<Lecture>> bySection = {};
+    final Map<String, int> countPerSection = {
+      'برنامج ليتفقهوا': 4,
+      'مواعظ': 3,
+      'خطب الجمعة': 3,
+    };
 
+    final Map<String, List<Lecture>> bySection = {};
     for (final lecture in all) {
       bySection.putIfAbsent(lecture.section, () => []).add(lecture);
     }
 
+    // كل قسم ياخد عدده المطلوب كقائمة منفصلة
+    final Map<String, List<Lecture>> picked = {};
+    countPerSection.forEach((section, count) {
+      final list = bySection[section] ?? [];
+      picked[section] = list.take(count).toList();
+    });
+
+    // نمزج بالتناوب: عنصر من كل قسم بالدور، لحد ما تخلص كل القوائم
     final List<Lecture> mix = [];
-    for (final entry in bySection.entries) {
-      mix.addAll(entry.value.take(perSection));
+    int index = 0;
+    bool addedAny = true;
+    while (addedAny) {
+      addedAny = false;
+      for (final section in countPerSection.keys) {
+        final list = picked[section]!;
+        if (index < list.length) {
+          mix.add(list[index]);
+          addedAny = true;
+        }
+      }
+      index++;
     }
 
     return mix;
   }
-
   static Future<List<Lecture>?> _readCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
