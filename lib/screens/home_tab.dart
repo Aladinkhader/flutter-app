@@ -35,7 +35,7 @@ class _HomeTabState extends State<HomeTab> {
       _error = false;
     });
     try {
-      final lectures = await ArchiveService.fetchAllLectures();
+      final lectures = await ArchiveService.fetchFeaturedMix();
       setState(() {
         _lectures = lectures;
         _loading = false;
@@ -110,15 +110,13 @@ class _HomeTabState extends State<HomeTab> {
       );
     }
 
-    final preview = _lectures!.take(6).toList();
-
     return Column(
-      children: preview
+      children: _lectures!
           .map((lecture) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: _LectureCard(
                   lecture: lecture,
-                  onTap: () => _openLecture(lecture, preview),
+                  onTap: () => _openLecture(lecture, _lectures!),
                 ),
               ))
           .toList(),
