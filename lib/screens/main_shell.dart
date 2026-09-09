@@ -109,96 +109,326 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-class _MiniPlayer extends StatelessWidget {
+class _MiniPlayer extends StatefulWidget {
   const _MiniPlayer();
+
+  @override
+  State<_MiniPlayer> createState() => _MiniPlayerState();
+}
+
+class _MiniPlayerState extends State<_MiniPlayer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+
+  double _dragOffset = 0;
+  bool _dismissed = false;
+  bool _wasPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+
+    final audioService = AudioPlayerService.instance;
+
+    _wasPlaying = audioService.isPlaying;
+
+    if (_wasPlaying) {
+      _pulseController.repeat(reverse: true);
+    }
+
+    audioService.addListener(_audioServiceChanged);
+  }
+
+  void _audioServiceChanged() {
+    final audioService = AudioPlayerService.instance;
+    final isPlaying = audioService.isPlaying;
+
+    if (isPlaying != _wasPlaying) {
+      _wasPlaying = isPlaying;
+
+      if (isPlaying) {
+        // عند تشغيل المحاضرة من جديد يظهر الـ Mini Player.
+        if (_dismissed) {
+          setState(() {
+            _dismissed = false;
+            _dragOffset = 0;
+          });
+        }
+
+        _pulseController.repeat(reverse: true);
+      } else {
+        // عند الإيقاف يتوقف النبض.
+        _pulseController.stop();
+        _pulseController.value = 0;
+      }
+
+      if (mounted) {
+        setState(() {});
+      }
+    } else if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    AudioPlayerService.instance.removeListener(_audioServiceChanged);
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    // السحب مسموح فقط عندما تكون المحاضرة متوقفة.
+    if (AudioPlayerService.instance.isPlaying) return;
+
+    setState(() {
+      _dragOffset += details.delta.dx;
+
+      if (_dragOffset > 180) {
+        _dragOffset = 180;
+      }
+
+      if (_dragOffset < -180) {
+        _dragOffset = -180;
+      }
+    });
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (AudioPlayerService.instance.isPlaying) return;
+
+    if (_dragOffset.abs() >= 90) {
+      setState(() {
+        _dismissed = true;
+      });
+    } else {
+      setState(() {
+        _dragOffset = 0;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final audioService = AudioPlayerService.instance;
 
     return AnimatedBuilder(
-      animation: audioService,
+      animation: Listenable.merge([
+        audioService,
+        _pulseController,
+      ]),
       builder: (context, _) {
         final lecture = audioService.currentLecture;
-        if (lecture == null) return const SizedBox.shrink();
+
+        if (lecture == null) {
+          return const SizedBox.shrink();
+        }
+
+        final isPlaying = audioService.isPlaying;
+
+        // إذا بدأت المحاضرة بعد أن أخفى المستخدم المستطيل،
+        // نعيد إظهاره تلقائيًا.
+        if (isPlaying && _dismissed) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+
+            setState(() {
+              _dismissed = false;
+              _dragOffset = 0;
+            });
+          });
+        }
+
+        if (_dismissed && !isPlaying) {
+          return const SizedBox.shrink();
+        }
+
+        final pulse = _pulseController.value;
 
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+
+          // أثناء التشغيل: لا يوجد سحب.
+          onHorizontalDragUpdate:
+              isPlaying ? null : _onDragUpdate,
+
+          onHorizontalDragEnd:
+              isPlaying ? null : _onDragEnd,
+
           onTap: () {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const FullPlayerScreen()),
+              MaterialPageRoute(
+                builder: (_) => const FullPlayerScreen(),
+              ),
             );
           },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.cardDark,
-              border: Border(
-                top: BorderSide(
-                  color: AppColors.primaryTeal.withOpacity(0.4),
+
+          child: AnimatedSlide(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            offset: Offset(_dragOffset / 360, 0),
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 220),
+              opacity: _dismissed ? 0 : 1,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.cardDark,
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.primaryTeal.withOpacity(
+                        isPlaying
+                            ? 0.45 + (pulse * 0.4)
+                            : 0.4,
+                      ),
+                      width: isPlaying
+                          ? 1.0 + (pulse * 0.8)
+                          : 1.0,
+                    ),
+                  ),
+                  boxShadow: [
+                    // الوهج النابض أثناء التشغيل.
+                    if (isPlaying)
+                      BoxShadow(
+                        color: AppColors.primaryTeal.withOpacity(
+                          0.12 + (pulse * 0.20),
+                        ),
+                        blurRadius: 8 + (pulse * 14),
+                        spreadRadius: pulse * 1.5,
+                        offset: const Offset(0, -2),
+                      ),
+
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, -3),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    // شعاع ضوء ناعم يتحرك داخل المستطيل أثناء التشغيل.
+                    if (isPlaying)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: FractionallySizedBox(
+                            widthFactor: 0.30,
+                            alignment: Alignment(
+                              -1.0 + (pulse * 2.0),
+                              0,
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [
+                                    Colors.transparent,
+                                    AppColors.primaryTeal.withOpacity(
+                                      0.10 + (pulse * 0.08),
+                                    ),
+                                    Colors.white.withOpacity(
+                                      0.10 + (pulse * 0.10),
+                                    ),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.primaryTeal.withOpacity(
+                                isPlaying
+                                    ? 0.5 + (pulse * 0.35)
+                                    : 0.5,
+                              ),
+                              width: isPlaying
+                                  ? 1.0 + (pulse * 0.7)
+                                  : 1.0,
+                            ),
+                            boxShadow: isPlaying
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primaryTeal
+                                          .withOpacity(
+                                        0.08 + (pulse * 0.15),
+                                      ),
+                                      blurRadius: 5 + (pulse * 7),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/sheikh.jpg',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                lecture.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.tajawal(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.mainText,
+                                ),
+                              ),
+                              Text(
+                                lecture.section,
+                                style: GoogleFonts.tajawal(
+                                  fontSize: 10,
+                                  color: AppColors.secondaryText
+                                      .withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        IconButton(
+                          onPressed: () =>
+                              audioService.togglePlayPause(),
+                          icon: Icon(
+                            audioService.isPlaying
+                                ? Icons.pause_circle_filled
+                                : Icons.play_circle_filled,
+                            color: AppColors.primaryTeal,
+                            size: 32,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
-                  blurRadius: 10,
-                  offset: const Offset(0, -3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.primaryTeal.withOpacity(0.5),
-                    ),
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/sheikh.jpg',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lecture.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.tajawal(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.mainText,
-                        ),
-                      ),
-                      Text(
-                        lecture.section,
-                        style: GoogleFonts.tajawal(
-                          fontSize: 10,
-                          color: AppColors.secondaryText.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => audioService.togglePlayPause(),
-                  icon: Icon(
-                    audioService.isPlaying
-                        ? Icons.pause_circle_filled
-                        : Icons.play_circle_filled,
-                    color: AppColors.primaryTeal,
-                    size: 32,
-                  ),
-                ),
-              ],
             ),
           ),
         );
@@ -209,6 +439,7 @@ class _MiniPlayer extends StatelessWidget {
 
 class _TopHeader extends StatelessWidget {
   final String pageTitle;
+
   const _TopHeader({required this.pageTitle});
 
   @override
@@ -232,7 +463,10 @@ class _TopHeader extends StatelessWidget {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 10,
+          ),
           child: Row(
             children: [
               Container(
