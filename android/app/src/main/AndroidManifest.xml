@@ -23,36 +23,52 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme"/>
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
         </activity>
 
-        <!-- خدمة شريط الستارة والوسائط -->
-        <service android:name="com.ryanheise.audioservice.AudioService"
+        <!-- خدمة تشغيل الوسائط في الخلفية -->
+        <service
+            android:name="com.ryanheise.audioservice.AudioService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="true"
             tools:ignore="Instantiatable">
+
             <intent-filter>
-                <action android:name="android.media.browse.MediaBrowserService" />
+                <action android:name="android.media.browse.MediaBrowserService"/>
             </intent-filter>
+
         </service>
 
-        <!-- مستقبل أزرار التحكم في الستارة -->
-        <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+        <!-- أيقونة إشعار مشغل الوسائط -->
+        <meta-data
+            android:name="com.ryanheise.audioservice.smallIcon"
+            android:resource="@drawable/ic_stat_notification"/>
+
+        <!-- استقبال أزرار التحكم بالوسائط -->
+        <receiver
+            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
             android:exported="true"
             tools:ignore="Instantiatable">
+
             <intent-filter>
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
+                <action android:name="android.intent.action.MEDIA_BUTTON"/>
             </intent-filter>
+
         </receiver>
 
         <meta-data
             android:name="flutterEmbedding"
-            android:value="2" />
+            android:value="2"/>
+
     </application>
+
 </manifest>
