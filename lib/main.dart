@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/favorites_service.dart';
@@ -30,10 +31,14 @@ Future<void> main() async {
   String? initError;
 
   try {
-    // تهيئة شريط لوحة الإشعارات والستارة
+    // تهيئة MediaSession ومشغل الوسائط في شريط الإشعارات
     await JustAudioBackground.init(
-      androidNotificationChannelId: 'com.sheikhapp.temp_scaffold.channel.audio',
-      androidNotificationChannelName: 'مشغل محاضرات الشيخ د. محمد الأمين',
+      androidNotificationChannelId:
+          'com.sheikhapp.temp_scaffold.channel.audio',
+      androidNotificationChannelName:
+          'مشغل محاضرات الشيخ د. محمد الأمين',
+      androidNotificationChannelDescription:
+          'التحكم في تشغيل محاضرات الشيخ د. محمد الأمين من شريط الإشعارات',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
     );
