@@ -34,13 +34,14 @@ Future<void> main() async {
     // تهيئة MediaSession ومشغل الوسائط في شريط الإشعارات
     await JustAudioBackground.init(
       androidNotificationChannelId:
-          'com.sheikhapp.temp_scaffold.channel.audio',
+          'com.sheikhapp.temp_scaffold.channel.media.v2',
       androidNotificationChannelName:
           'مشغل محاضرات الشيخ د. محمد الأمين',
       androidNotificationChannelDescription:
           'التحكم في تشغيل محاضرات الشيخ د. محمد الأمين من شريط الإشعارات',
+      androidNotificationIcon: 'mipmap/ic_launcher',
       androidNotificationOngoing: true,
-      androidStopForegroundOnPause: true,
+      androidStopForegroundOnPause: false,
     );
 
     await FavoritesService.instance.init();
