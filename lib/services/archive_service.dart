@@ -8,6 +8,8 @@ class ArchiveService {
     '23-23-mp-3-160-k': 'برنامج ليتفقهوا',
     '20260814_20260814_2109': 'مواعظ',
     'mp-3-160-k_20260814': 'خطب الجمعة',
+    'mp-3-16_202609': 'فتاوي',
+    '19-.-m-4-a-128-k': 'برنامج ليدبروا',
   };
 
   static const _cacheKey = 'lectures_cache_v1';
@@ -76,9 +78,15 @@ class ArchiveService {
 
     for (final file in files) {
       final name = file['name'] as String? ?? '';
-      if (!name.toLowerCase().endsWith('.mp3')) continue;
+      final lowerName = name.toLowerCase();
+      if (!lowerName.endsWith('.mp3') && !lowerName.endsWith('.m4a')) {
+        continue;
+      }
 
-      final title = name.substring(0, name.length - 4);
+      final rawTitle = name.substring(0, name.length - 4);
+      final displayTitle =
+          sectionTitle == 'فتاوي' ? _cleanFatawaTitle(rawTitle) : rawTitle;
+
       final audioUrl = Uri.https(
         'archive.org',
         '/download/$identifier/$name',
@@ -86,7 +94,7 @@ class ArchiveService {
 
       lectures.add(
         Lecture(
-          title: title,
+          title: displayTitle,
           section: sectionTitle,
           audioUrl: audioUrl,
           identifier: identifier,
@@ -94,7 +102,7 @@ class ArchiveService {
       );
     }
 
-    // نرتب حسب رقم الحلقة المستخرج من العنوان (تصاعديًا)
+    // نرتب حسب رقم الحلقة المستخرج من الاسم الأصلي (البرومو أولًا، ثم تصاعديًا)
     lectures.sort((a, b) {
       final numA = _extractEpisodeNumber(a.title);
       final numB = _extractEpisodeNumber(b.title);
@@ -107,53 +115,42 @@ class ArchiveService {
     return lectures;
   }
 
-  /// يستخرج أول رقم موجود بعنوان المحاضرة (زي "الحلقة (05)" -> 5)
+  /// يستخرج رقم الحلقة (البرومو يعتبر صفر عشان يطلع أول واحد)
   static int? _extractEpisodeNumber(String title) {
+    if (title.contains('برومو')) return 0;
     final match = RegExp(r'\d+').firstMatch(title);
     if (match == null) return null;
     return int.tryParse(match.group(0)!);
   }
 
-  /// يجيب تشكيلة متنوعة: عدد محدد من المحاضرات من كل قسم (بدل أول ملفات قسم واحد)
-  /// يجيب تشكيلة متنوعة ومتداخلة: عدد مخصص من كل قسم، بترتيب ممزوج بينهم
-  static Future<List<Lecture>> fetchFeaturedMix() async {
-    final all = await fetchAllLectures();
-    final Map<String, int> countPerSection = {
-      'برنامج ليتفقهوا': 4,
-      'مواعظ': 3,
-      'خطب الجمعة': 3,
-    };
+  /// ينظف عناوين الفتاوى: يشيل اسم الشيخ والفواصل والأرقام الزائدة بالآخر
+  static String _cleanFatawaTitle(String raw) {
+    var t = raw;
 
-    final Map<String, List<Lecture>> bySection = {};
-    for (final lecture in all) {
-      bySection.putIfAbsent(lecture.section, () => []).add(lecture);
+    final namePatterns = [
+      RegExp(r'الشيخ\s*الدكتور\s*محمد\s*الأمين\s*إسماعيل'),
+      RegExp(r'الشيخ\s*د\.?\s*محمد\s*الأمين\s*إسماعيل'),
+      RegExp(r'د\.?\s*محمد\s*الأمين\s*إسماعيل'),
+      RegExp(r'محمد\s*الأمين\s*إسماعيل'),
+      RegExp(r'برنامج\s*إفادة\s*السائلين'),
+    ];
+    for (final p in namePatterns) {
+      t = t.replaceAll(p, '');
     }
 
-    // كل قسم ياخد عدده المطلوب كقائمة منفصلة
-    final Map<String, List<Lecture>> picked = {};
-    countPerSection.forEach((section, count) {
-      final list = bySection[section] ?? [];
-      picked[section] = list.take(count).toList();
-    });
+    t = t.replaceAll('||', ' ');
+    t = t.replaceAll('|', ' ');
+    t = t.replaceAll('🔹', ' ');
+    t = t.replaceAll('__', ' ');
+    t = t.replaceAll(RegExp(r'\bI\b'), ' ');
+    t = t.replaceAll(RegExp(r'\s+'), ' ').trim();
 
-    // نمزج بالتناوب: عنصر من كل قسم بالدور، لحد ما تخلص كل القوائم
-    final List<Lecture> mix = [];
-    int index = 0;
-    bool addedAny = true;
-    while (addedAny) {
-      addedAny = false;
-      for (final section in countPerSection.keys) {
-        final list = picked[section]!;
-        if (index < list.length) {
-          mix.add(list[index]);
-          addedAny = true;
-        }
-      }
-      index++;
-    }
+    // إزالة أي أرقام زايدة بآخر العنوان (زي "؟2" أو "3")
+    t = t.replaceAll(RegExp(r'\d+$'), '').trim();
 
-    return mix;
+    return t.isEmpty ? raw : t;
   }
+
   static Future<List<Lecture>?> _readCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -193,6 +190,44 @@ class ArchiveService {
       );
       await prefs.setString(_cacheKey, raw);
     } catch (_) {}
+  }
+
+  /// يجيب تشكيلة متنوعة ومتداخلة: عدد مخصص من كل قسم، بترتيب ممزوج بينهم
+  static Future<List<Lecture>> fetchFeaturedMix() async {
+    final all = await fetchAllLectures();
+    final Map<String, int> countPerSection = {
+      'برنامج ليتفقهوا': 4,
+      'مواعظ': 3,
+      'خطب الجمعة': 3,
+    };
+
+    final Map<String, List<Lecture>> bySection = {};
+    for (final lecture in all) {
+      bySection.putIfAbsent(lecture.section, () => []).add(lecture);
+    }
+
+    final Map<String, List<Lecture>> picked = {};
+    countPerSection.forEach((section, count) {
+      final list = bySection[section] ?? [];
+      picked[section] = list.take(count).toList();
+    });
+
+    final List<Lecture> mix = [];
+    int index = 0;
+    bool addedAny = true;
+    while (addedAny) {
+      addedAny = false;
+      for (final section in countPerSection.keys) {
+        final list = picked[section]!;
+        if (index < list.length) {
+          mix.add(list[index]);
+          addedAny = true;
+        }
+      }
+      index++;
+    }
+
+    return mix;
   }
 
   static Future<void> clearCache() async {
