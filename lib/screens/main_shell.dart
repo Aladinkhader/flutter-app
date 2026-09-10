@@ -31,8 +31,11 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+
     _tabs = [
-      HomeTab(onNavigateToCategories: () => setState(() => _currentIndex = 2)),
+      HomeTab(
+        onNavigateToCategories: () => setState(() => _currentIndex = 2),
+      ),
       const AllLecturesTab(),
       const CategoriesTab(),
       const DownloadsFavoritesTab(),
@@ -47,7 +50,9 @@ class _MainShellState extends State<MainShell> {
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(74),
-          child: _TopHeader(pageTitle: _titles[_currentIndex]),
+          child: _TopHeader(
+            pageTitle: _titles[_currentIndex],
+          ),
         ),
         body: SafeArea(
           top: false,
@@ -58,6 +63,7 @@ class _MainShellState extends State<MainShell> {
                 begin: const Offset(0, 0.03),
                 end: Offset.zero,
               ).animate(animation);
+
               return FadeTransition(
                 opacity: animation,
                 child: SlideTransition(
@@ -130,7 +136,7 @@ class _MiniPlayerState extends State<_MiniPlayer>
 
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: const Duration(milliseconds: 1500),
     );
 
     final audioService = AudioPlayerService.instance;
@@ -152,7 +158,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
       _wasPlaying = isPlaying;
 
       if (isPlaying) {
-        // عند تشغيل المحاضرة من جديد يظهر الـ Mini Player.
         if (_dismissed) {
           setState(() {
             _dismissed = false;
@@ -162,7 +167,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
 
         _pulseController.repeat(reverse: true);
       } else {
-        // عند الإيقاف يتوقف النبض.
         _pulseController.stop();
         _pulseController.value = 0;
       }
@@ -183,7 +187,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
   }
 
   void _onDragUpdate(DragUpdateDetails details) {
-    // السحب مسموح فقط عندما تكون المحاضرة متوقفة.
     if (AudioPlayerService.instance.isPlaying) return;
 
     setState(() {
@@ -231,8 +234,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
 
         final isPlaying = audioService.isPlaying;
 
-        // إذا بدأت المحاضرة بعد أن أخفى المستخدم المستطيل،
-        // نعيد إظهاره تلقائيًا.
         if (isPlaying && _dismissed) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
@@ -250,10 +251,23 @@ class _MiniPlayerState extends State<_MiniPlayer>
 
         final pulse = _pulseController.value;
 
+        /*
+         * Pulse جديد:
+         *
+         * لا يوجد شعاع ضوء متحرك.
+         * المستطيل نفسه ينبض بهدوء أثناء التشغيل.
+         */
+        final borderOpacity = isPlaying
+            ? 0.38 + (pulse * 0.32)
+            : 0.4;
+
+        final borderWidth = isPlaying
+            ? 1.0 + (pulse * 0.8)
+            : 1.0;
+
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
 
-          // أثناء التشغيل: لا يوجد سحب.
           onHorizontalDragUpdate:
               isPlaying ? null : _onDragUpdate,
 
@@ -282,28 +296,32 @@ class _MiniPlayerState extends State<_MiniPlayer>
                 ),
                 decoration: BoxDecoration(
                   color: AppColors.cardDark,
+
+                  /*
+                   * الحدود تنبض بدل شعاع الضوء.
+                   */
                   border: Border(
                     top: BorderSide(
                       color: AppColors.primaryTeal.withOpacity(
-                        isPlaying
-                            ? 0.45 + (pulse * 0.4)
-                            : 0.4,
+                        borderOpacity,
                       ),
-                      width: isPlaying
-                          ? 1.0 + (pulse * 0.8)
-                          : 1.0,
+                      width: borderWidth,
                     ),
                   ),
+
+                  /*
+                   * Shadow نبضي خفيف جدًا يعطي إحساس
+                   * بأن المستطيل يتنفس أثناء التشغيل.
+                   */
                   boxShadow: [
-                    // الوهج النابض أثناء التشغيل.
                     if (isPlaying)
                       BoxShadow(
                         color: AppColors.primaryTeal.withOpacity(
-                          0.12 + (pulse * 0.20),
+                          0.05 + (pulse * 0.10),
                         ),
-                        blurRadius: 8 + (pulse * 14),
-                        spreadRadius: pulse * 1.5,
-                        offset: const Offset(0, -2),
+                        blurRadius: 5 + (pulse * 7),
+                        spreadRadius: pulse * 0.8,
+                        offset: const Offset(0, -1),
                       ),
 
                     BoxShadow(
@@ -313,118 +331,87 @@ class _MiniPlayerState extends State<_MiniPlayer>
                     ),
                   ],
                 ),
-                child: Stack(
+
+                /*
+                 * لا يوجد هنا أي PositionedFill أو شعاع ضوء.
+                 */
+                child: Row(
                   children: [
-                    // شعاع ضوء ناعم يتحرك داخل المستطيل أثناء التشغيل.
-                    if (isPlaying)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: FractionallySizedBox(
-                            widthFactor: 0.30,
-                            alignment: Alignment(
-                              -1.0 + (pulse * 2.0),
-                              0,
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: [
-                                    Colors.transparent,
-                                    AppColors.primaryTeal.withOpacity(
-                                      0.10 + (pulse * 0.08),
-                                    ),
-                                    Colors.white.withOpacity(
-                                      0.10 + (pulse * 0.10),
-                                    ),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                            ),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primaryTeal.withOpacity(
+                            isPlaying
+                                ? 0.45 + (pulse * 0.30)
+                                : 0.5,
                           ),
+                          width: isPlaying
+                              ? 1.0 + (pulse * 0.6)
+                              : 1.0,
+                        ),
+                        boxShadow: isPlaying
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primaryTeal
+                                      .withOpacity(
+                                    0.04 + (pulse * 0.08),
+                                  ),
+                                  blurRadius: 4 + (pulse * 5),
+                                  spreadRadius: pulse * 0.4,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/sheikh.jpg',
+                          fit: BoxFit.cover,
                         ),
                       ),
+                    ),
 
-                    Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.primaryTeal.withOpacity(
-                                isPlaying
-                                    ? 0.5 + (pulse * 0.35)
-                                    : 0.5,
-                              ),
-                              width: isPlaying
-                                  ? 1.0 + (pulse * 0.7)
-                                  : 1.0,
-                            ),
-                            boxShadow: isPlaying
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.primaryTeal
-                                          .withOpacity(
-                                        0.08 + (pulse * 0.15),
-                                      ),
-                                      blurRadius: 5 + (pulse * 7),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              'assets/images/sheikh.jpg',
-                              fit: BoxFit.cover,
+                    const SizedBox(width: 10),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lecture.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.tajawal(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.mainText,
                             ),
                           ),
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                lecture.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.tajawal(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.mainText,
-                                ),
-                              ),
-                              Text(
-                                lecture.section,
-                                style: GoogleFonts.tajawal(
-                                  fontSize: 10,
-                                  color: AppColors.secondaryText
-                                      .withOpacity(0.8),
-                                ),
-                              ),
-                            ],
+                          Text(
+                            lecture.section,
+                            style: GoogleFonts.tajawal(
+                              fontSize: 10,
+                              color: AppColors.secondaryText
+                                  .withOpacity(0.8),
+                            ),
                           ),
-                        ),
+                        ],
+                      ),
+                    ),
 
-                        IconButton(
-                          onPressed: () =>
-                              audioService.togglePlayPause(),
-                          icon: Icon(
-                            audioService.isPlaying
-                                ? Icons.pause_circle_filled
-                                : Icons.play_circle_filled,
-                            color: AppColors.primaryTeal,
-                            size: 32,
-                          ),
-                        ),
-                      ],
+                    IconButton(
+                      onPressed: () =>
+                          audioService.togglePlayPause(),
+                      icon: Icon(
+                        audioService.isPlaying
+                            ? Icons.pause_circle_filled
+                            : Icons.play_circle_filled,
+                        color: AppColors.primaryTeal,
+                        size: 32,
+                      ),
                     ),
                   ],
                 ),
@@ -440,7 +427,9 @@ class _MiniPlayerState extends State<_MiniPlayer>
 class _TopHeader extends StatelessWidget {
   final String pageTitle;
 
-  const _TopHeader({required this.pageTitle});
+  const _TopHeader({
+    required this.pageTitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -485,7 +474,9 @@ class _TopHeader extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(width: 12),
+
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -506,7 +497,9 @@ class _TopHeader extends StatelessWidget {
                   ),
                 ],
               ),
+
               const Spacer(),
+
               Container(
                 width: 36,
                 height: 36,
