@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+
 import '../theme/app_colors.dart';
 import '../services/audio_player_service.dart';
 
@@ -9,20 +11,177 @@ class FullPlayerScreen extends StatefulWidget {
   const FullPlayerScreen({super.key});
 
   @override
-  State<FullPlayerScreen> createState() => _FullPlayerScreenState();
+  State<FullPlayerScreen> createState() =>
+      _FullPlayerScreenState();
 }
 
-class _FullPlayerScreenState extends State<FullPlayerScreen> {
+class _FullPlayerScreenState
+    extends State<FullPlayerScreen> {
   Timer? _refreshTimer;
+
   bool _seeking = false;
   double _seekValue = 0;
+
+  bool _checkingAvailability = true;
+  bool _blocked = false;
 
   @override
   void initState() {
     super.initState();
-    _refreshTimer = Timer.periodic(const Duration(milliseconds: 300), (_) {
-      if (mounted) setState(() {});
+
+    _checkLectureAvailability();
+
+    _refreshTimer = Timer.periodic(
+      const Duration(milliseconds: 300),
+      (_) {
+        if (mounted && !_checkingAvailability) {
+          setState(() {});
+        }
+      },
+    );
+  }
+
+  Future<void> _checkLectureAvailability() async {
+    final audioService =
+        AudioPlayerService.instance;
+
+    final lecture =
+        audioService.currentLecture;
+
+    if (lecture == null) {
+      if (!mounted) return;
+
+      setState(() {
+        _checkingAvailability = false;
+        _blocked = true;
+      });
+
+      await _showUnavailableDialog();
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      return;
+    }
+
+    final canPlay =
+        await audioService.canPlayLecture(lecture);
+
+    if (!mounted) return;
+
+    if (!canPlay) {
+      setState(() {
+        _checkingAvailability = false;
+        _blocked = true;
+      });
+
+      await _showUnavailableDialog();
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      return;
+    }
+
+    setState(() {
+      _checkingAvailability = false;
+      _blocked = false;
     });
+  }
+
+  Future<void> _showUnavailableDialog() async {
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: AppColors.cardDark,
+            shape: RoundedRectangleBorder(
+              borderRadius:
+                  BorderRadius.circular(20),
+            ),
+            icon: Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primaryTeal
+                    .withOpacity(0.12),
+                border: Border.all(
+                  color: AppColors.primaryTeal
+                      .withOpacity(0.35),
+                ),
+              ),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                color: AppColors.primaryTeal,
+                size: 28,
+              ),
+            ),
+            title: Text(
+              'المحاضرة غير متاحة حاليًا',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.tajawal(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: AppColors.mainText,
+              ),
+            ),
+            content: Text(
+              'للاستماع إليها الآن، اتصل بالإنترنت. '
+              'ويمكنك تنزيل المحاضرة مسبقًا للاستماع إليها '
+              'لاحقًا دون الحاجة إلى اتصال.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.tajawal(
+                fontSize: 12,
+                height: 1.8,
+                color: AppColors.secondaryText,
+              ),
+            ),
+            actionsAlignment:
+                MainAxisAlignment.center,
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () =>
+                      Navigator.of(dialogContext).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        AppColors.primaryTeal,
+                    foregroundColor:
+                        AppColors.background,
+                    elevation: 0,
+                    padding:
+                        const EdgeInsets.symmetric(
+                      vertical: 12,
+                    ),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'حسنًا',
+                    style: GoogleFonts.tajawal(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -32,79 +191,160 @@ class _FullPlayerScreenState extends State<FullPlayerScreen> {
   }
 
   String _formatDuration(Duration d) {
-    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final minutes =
+        d.inMinutes.remainder(60)
+            .toString()
+            .padLeft(2, '0');
+
+    final seconds =
+        d.inSeconds.remainder(60)
+            .toString()
+            .padLeft(2, '0');
+
     return '$minutes:$seconds';
   }
 
   @override
   Widget build(BuildContext context) {
-    final audioService = AudioPlayerService.instance;
-    final lecture = audioService.currentLecture;
+    if (_checkingAvailability ||
+        _blocked) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor:
+              AppColors.background,
+          body: const Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
 
-    final durationMs = audioService.duration.inMilliseconds;
-    final positionMs = audioService.position.inMilliseconds;
+    final audioService =
+        AudioPlayerService.instance;
+
+    final lecture =
+        audioService.currentLecture;
+
+    final durationMs =
+        audioService.duration.inMilliseconds;
+
+    final positionMs =
+        audioService.position.inMilliseconds;
+
     final livePercent =
-        durationMs > 0 ? (positionMs / durationMs).clamp(0.0, 1.0) : 0.0;
-    final displayPercent = _seeking ? _seekValue : livePercent;
+        durationMs > 0
+            ? (positionMs / durationMs)
+                .clamp(0.0, 1.0)
+            : 0.0;
+
+    final displayPercent =
+        _seeking
+            ? _seekValue
+            : livePercent;
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor:
+            AppColors.background,
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 12,
+            ),
             child: Column(
               children: [
                 Row(
                   children: [
                     IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.arrow_forward_ios,
-                          color: AppColors.secondaryText, size: 18),
+                      onPressed: () =>
+                          Navigator.of(context)
+                              .pop(),
+                      icon: Icon(
+                        Icons
+                            .arrow_forward_ios,
+                        color:
+                            AppColors
+                                .secondaryText,
+                        size: 18,
+                      ),
                     ),
                   ],
                 ),
                 const Spacer(),
                 GestureDetector(
-                  onPanStart: (_) => setState(() => _seeking = true),
+                  onPanStart: (_) =>
+                      setState(
+                    () => _seeking = true,
+                  ),
                   onPanUpdate: (details) {
-                    _updateSeekFromDrag(details.localPosition);
+                    _updateSeekFromDrag(
+                      details.localPosition,
+                    );
                   },
                   onPanEnd: (_) {
                     if (durationMs > 0) {
                       audioService.seek(
                         Duration(
-                            milliseconds: (_seekValue * durationMs).toInt()),
+                          milliseconds:
+                              (_seekValue *
+                                      durationMs)
+                                  .toInt(),
+                        ),
                       );
                     }
-                    setState(() => _seeking = false);
+
+                    setState(
+                      () => _seeking = false,
+                    );
                   },
-                  child: CircularPercentIndicator(
+                  child:
+                      CircularPercentIndicator(
                     radius: 115,
                     lineWidth: 6,
                     percent: displayPercent,
-                    circularStrokeCap: CircularStrokeCap.round,
-                    backgroundColor: AppColors.cardDark,
-                    progressColor: Colors.white,
+                    circularStrokeCap:
+                        CircularStrokeCap.round,
+                    backgroundColor:
+                        AppColors.cardDark,
+                    progressColor:
+                        Colors.white,
                     animation: false,
                     center: Container(
                       width: 200,
                       height: 200,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.cardDark,
-                        border: Border.all(
-                          color: AppColors.primaryTeal.withOpacity(0.4),
+                      padding:
+                          const EdgeInsets.all(8),
+                      decoration:
+                          BoxDecoration(
+                        shape:
+                            BoxShape.circle,
+                        color:
+                            AppColors.cardDark,
+                        border:
+                            Border.all(
+                          color: AppColors
+                              .primaryTeal
+                              .withOpacity(
+                            0.4,
+                          ),
                           width: 3,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.35),
+                            color: Colors.black
+                                .withOpacity(
+                              0.35,
+                            ),
                             blurRadius: 28,
-                            offset: const Offset(0, 12),
+                            offset:
+                                const Offset(
+                              0,
+                              12,
+                            ),
                           ),
                         ],
                       ),
@@ -120,107 +360,201 @@ class _FullPlayerScreenState extends State<FullPlayerScreen> {
                 const SizedBox(height: 28),
                 Text(
                   lecture?.title ?? '',
-                  textAlign: TextAlign.center,
+                  textAlign:
+                      TextAlign.center,
                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.tajawal(
+                  overflow:
+                      TextOverflow.ellipsis,
+                  style:
+                      GoogleFonts.tajawal(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.mainText,
+                    fontWeight:
+                        FontWeight.bold,
+                    color:
+                        AppColors.mainText,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   lecture?.section ?? '',
-                  style: GoogleFonts.tajawal(
+                  style:
+                      GoogleFonts.tajawal(
                     fontSize: 12,
-                    color: AppColors.secondaryText,
+                    color:
+                        AppColors
+                            .secondaryText,
                   ),
                 ),
                 const Spacer(),
                 SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
+                  data:
+                      SliderTheme.of(context)
+                          .copyWith(
                     trackHeight: 3,
                     thumbShape:
-                        const RoundSliderThumbShape(enabledThumbRadius: 6),
+                        const RoundSliderThumbShape(
+                      enabledThumbRadius: 6,
+                    ),
                   ),
                   child: Slider(
                     value: durationMs > 0
-                        ? positionMs.clamp(0, durationMs).toDouble()
+                        ? positionMs
+                            .clamp(
+                              0,
+                              durationMs,
+                            )
+                            .toDouble()
                         : 0,
                     min: 0,
-                    max: durationMs > 0 ? durationMs.toDouble() : 1,
-                    activeColor: AppColors.primaryTeal,
-                    inactiveColor: AppColors.cardDark,
+                    max: durationMs > 0
+                        ? durationMs
+                            .toDouble()
+                        : 1,
+                    activeColor:
+                        AppColors.primaryTeal,
+                    inactiveColor:
+                        AppColors.cardDark,
                     onChanged: (value) {
-                      audioService.seek(Duration(milliseconds: value.toInt()));
+                      audioService.seek(
+                        Duration(
+                          milliseconds:
+                              value.toInt(),
+                        ),
+                      );
                     },
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 4,
+                  ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment:
+                        MainAxisAlignment
+                            .spaceBetween,
                     children: [
                       Text(
-                        _formatDuration(audioService.position),
-                        style: GoogleFonts.tajawal(
-                            color: AppColors.secondaryText, fontSize: 11),
+                        _formatDuration(
+                          audioService.position,
+                        ),
+                        style:
+                            GoogleFonts.tajawal(
+                          color: AppColors
+                              .secondaryText,
+                          fontSize: 11,
+                        ),
                       ),
                       Text(
-                        _formatDuration(audioService.duration),
-                        style: GoogleFonts.tajawal(
-                            color: AppColors.secondaryText, fontSize: 11),
+                        _formatDuration(
+                          audioService.duration,
+                        ),
+                        style:
+                            GoogleFonts.tajawal(
+                          color: AppColors
+                              .secondaryText,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      onPressed: audioService.hasPrevious
-                          ? audioService.playPrevious
-                          : null,
-                      icon: Icon(Icons.skip_previous_rounded,
-                          color: audioService.hasPrevious
-                              ? AppColors.secondaryText
-                              : AppColors.secondaryText.withOpacity(0.3),
-                          size: 26),
+                      onPressed:
+                          audioService
+                                  .hasPrevious
+                              ? audioService
+                                  .playPrevious
+                              : null,
+                      icon: Icon(
+                        Icons
+                            .skip_previous_rounded,
+                        color: audioService
+                                .hasPrevious
+                            ? AppColors
+                                .secondaryText
+                            : AppColors
+                                .secondaryText
+                                .withOpacity(
+                              0.3,
+                            ),
+                        size: 26,
+                      ),
                     ),
                     IconButton(
-                      onPressed: () => audioService.skipBackward(),
-                      icon: Icon(Icons.replay_10_rounded,
-                          color: AppColors.secondaryText, size: 28),
+                      onPressed: () =>
+                          audioService
+                              .skipBackward(),
+                      icon: Icon(
+                        Icons
+                            .replay_10_rounded,
+                        color: AppColors
+                            .secondaryText,
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    _PlayPauseButton(audioService: audioService),
+                    _PlayPauseButton(
+                      audioService:
+                          audioService,
+                    ),
                     const SizedBox(width: 12),
                     IconButton(
-                      onPressed: () => audioService.skipForward(),
-                      icon: Icon(Icons.forward_10_rounded,
-                          color: AppColors.secondaryText, size: 28),
+                      onPressed: () =>
+                          audioService
+                              .skipForward(),
+                      icon: Icon(
+                        Icons
+                            .forward_10_rounded,
+                        color: AppColors
+                            .secondaryText,
+                        size: 28,
+                      ),
                     ),
                     IconButton(
                       onPressed:
-                          audioService.hasNext ? audioService.playNext : null,
-                      icon: Icon(Icons.skip_next_rounded,
-                          color: audioService.hasNext
-                              ? AppColors.secondaryText
-                              : AppColors.secondaryText.withOpacity(0.3),
-                          size: 26),
+                          audioService.hasNext
+                              ? audioService
+                                  .playNext
+                              : null,
+                      icon: Icon(
+                        Icons
+                            .skip_next_rounded,
+                        color: audioService
+                                .hasNext
+                            ? AppColors
+                                .secondaryText
+                            : AppColors
+                                .secondaryText
+                                .withOpacity(
+                              0.3,
+                            ),
+                        size: 26,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 IconButton(
-                  onPressed: () => audioService.toggleRepeat(),
+                  onPressed: () =>
+                      audioService
+                          .toggleRepeat(),
                   icon: Icon(
                     Icons.repeat_rounded,
-                    color: audioService.isRepeat
-                        ? AppColors.primaryTeal
-                        : AppColors.secondaryText.withOpacity(0.5),
+                    color: audioService
+                            .isRepeat
+                        ? AppColors
+                            .primaryTeal
+                        : AppColors
+                            .secondaryText
+                            .withOpacity(
+                          0.5,
+                        ),
                     size: 22,
                   ),
                 ),
@@ -233,43 +567,73 @@ class _FullPlayerScreenState extends State<FullPlayerScreen> {
     );
   }
 
-  void _updateSeekFromDrag(Offset localPosition) {
-    // مركز الدائرة تقريبًا منتصف العنصر (نصف قطر ~115 + سمك الخط)
-    const center = Offset(121, 121);
-    final dx = localPosition.dx - center.dx;
-    final dy = localPosition.dy - center.dy;
-    // زاوية من الأعلى (12 بالساعة) باتجاه عقارب الساعة
-    double angle = (atan2Custom(dy, dx) + 3.14159 / 2) / (2 * 3.14159);
-    if (angle < 0) angle += 1;
-    setState(() => _seekValue = angle.clamp(0.0, 1.0));
+  void _updateSeekFromDrag(
+    Offset localPosition,
+  ) {
+    const center =
+        Offset(121, 121);
+
+    final dx =
+        localPosition.dx - center.dx;
+
+    final dy =
+        localPosition.dy - center.dy;
+
+    double angle =
+        (atan2Custom(dy, dx) +
+                3.14159 / 2) /
+            (2 * 3.14159);
+
+    if (angle < 0) {
+      angle += 1;
+    }
+
+    setState(
+      () => _seekValue =
+          angle.clamp(0.0, 1.0),
+    );
   }
 
-  double atan2Custom(double y, double x) {
+  double atan2Custom(
+    double y,
+    double x,
+  ) {
     return Offset(x, y).direction;
   }
 }
 
-class _PlayPauseButton extends StatefulWidget {
+class _PlayPauseButton
+    extends StatefulWidget {
   final AudioPlayerService audioService;
-  const _PlayPauseButton({required this.audioService});
+
+  const _PlayPauseButton({
+    required this.audioService,
+  });
 
   @override
-  State<_PlayPauseButton> createState() => _PlayPauseButtonState();
+  State<_PlayPauseButton> createState() =>
+      _PlayPauseButtonState();
 }
 
-class _PlayPauseButtonState extends State<_PlayPauseButton> {
+class _PlayPauseButtonState
+    extends State<_PlayPauseButton> {
   bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: () => widget.audioService.togglePlayPause(),
+      onTapDown: (_) =>
+          setState(() => _pressed = true),
+      onTapUp: (_) =>
+          setState(() => _pressed = false),
+      onTapCancel: () =>
+          setState(() => _pressed = false),
+      onTap: () => widget.audioService
+          .togglePlayPause(),
       child: AnimatedScale(
         scale: _pressed ? 0.92 : 1.0,
-        duration: const Duration(milliseconds: 120),
+        duration:
+            const Duration(milliseconds: 120),
         child: Container(
           width: 64,
           height: 64,
@@ -278,9 +642,11 @@ class _PlayPauseButtonState extends State<_PlayPauseButton> {
             color: AppColors.mainText,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryTeal.withOpacity(0.3),
+                color: AppColors.primaryTeal
+                    .withOpacity(0.3),
                 blurRadius: 16,
-                offset: const Offset(0, 6),
+                offset:
+                    const Offset(0, 6),
               ),
             ],
           ),
