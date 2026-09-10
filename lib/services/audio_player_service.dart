@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -32,6 +34,66 @@ class AudioPlayerService extends ChangeNotifier {
   Duration get position => _player.position;
 
   Duration get duration => _player.duration ?? Duration.zero;
+
+  /// يتحقق أولاً من وجود نسخة محلية صالحة.
+  /// إذا لم تكن المحاضرة محملة، يتحقق من توفر الإنترنت.
+  Future<bool> canPlayLecture(Lecture lecture) async {
+    try {
+      final localPath =
+          DownloadsService.instance.localPathFor(lecture);
+
+      if (localPath != null && localPath.isNotEmpty) {
+        final localFile = File(localPath);
+
+        if (await localFile.exists()) {
+          debugPrint(
+            'MEDIA ACCESS: local file available',
+          );
+          return true;
+        }
+      }
+
+      debugPrint(
+        'MEDIA ACCESS: no local file, checking internet',
+      );
+
+      return await _hasInternetConnection();
+    } catch (e, st) {
+      debugPrint(
+        'MEDIA ACCESS CHECK ERROR: $e',
+      );
+      debugPrint('$st');
+
+      return false;
+    }
+  }
+
+  /// يتحقق من وجود اتصال فعلي يمكن استخدامه للوصول إلى الإنترنت.
+  Future<bool> _hasInternetConnection() async {
+    Socket? socket;
+
+    try {
+      socket = await Socket.connect(
+        'archive.org',
+        443,
+        timeout: const Duration(seconds: 3),
+      );
+
+      debugPrint(
+        'MEDIA INTERNET: connection available',
+      );
+
+      return true;
+    } catch (e) {
+      debugPrint(
+        'MEDIA INTERNET: no connection',
+      );
+
+      return false;
+    } finally {
+      socket?.destroy();
+    }
+  }
 
   Future<void> stop() async {
     try {
@@ -71,7 +133,9 @@ class AudioPlayerService extends ChangeNotifier {
           _player.seek(Duration.zero);
           _player.play();
         } else {
-          debugPrint('MEDIA: playback completed, moving to next');
+          debugPrint(
+            'MEDIA: playback completed, moving to next',
+          );
 
           playNext();
         }
@@ -113,10 +177,12 @@ class AudioPlayerService extends ChangeNotifier {
       },
     );
 
-    debugPrint('MEDIA: AudioPlayerService initialized');
+    debugPrint(
+      'MEDIA: AudioPlayerService initialized',
+    );
   }
 
-  Future<void> playLecture(
+  Future<bool> playLecture(
     Lecture lecture, {
     List<Lecture>? queue,
   }) async {
@@ -130,13 +196,26 @@ class AudioPlayerService extends ChangeNotifier {
       );
 
       await togglePlayPause();
-      return;
+      return true;
     }
 
     _currentLecture = lecture;
     notifyListeners();
 
     try {
+      final canPlay = await canPlayLecture(lecture);
+
+      if (!canPlay) {
+        debugPrint(
+          'MEDIA: lecture unavailable without internet',
+        );
+
+        _currentLecture = null;
+        notifyListeners();
+
+        return false;
+      }
+
       final localPath =
           DownloadsService.instance.localPathFor(lecture);
 
@@ -160,13 +239,19 @@ class AudioPlayerService extends ChangeNotifier {
         tag: mediaItem,
       );
 
-      debugPrint('MEDIA: setting audio source');
+      debugPrint(
+        'MEDIA: setting audio source',
+      );
 
       await _player.setAudioSource(audioSource);
 
-      debugPrint('MEDIA: audio source loaded');
+      debugPrint(
+        'MEDIA: audio source loaded',
+      );
 
-      debugPrint('MEDIA: calling play()');
+      debugPrint(
+        'MEDIA: calling play()',
+      );
 
       await _player.play();
 
@@ -174,18 +259,32 @@ class AudioPlayerService extends ChangeNotifier {
         'MEDIA: play() completed, '
         'playing=${_player.playing}',
       );
+
+      notifyListeners();
+
+      return true;
     } on PlayerException catch (e, st) {
       debugPrint(
         'MEDIA PLAYER EXCEPTION: '
         'code=${e.code}, message=${e.message}',
       );
       debugPrint('$st');
-    } catch (e, st) {
-      debugPrint('MEDIA GENERAL ERROR: $e');
-      debugPrint('$st');
-    }
 
-    notifyListeners();
+      _currentLecture = null;
+      notifyListeners();
+
+      return false;
+    } catch (e, st) {
+      debugPrint(
+        'MEDIA GENERAL ERROR: $e',
+      );
+      debugPrint('$st');
+
+      _currentLecture = null;
+      notifyListeners();
+
+      return false;
+    }
   }
 
   Future<void> togglePlayPause() async {
@@ -206,7 +305,9 @@ class AudioPlayerService extends ChangeNotifier {
         );
       }
     } catch (e, st) {
-      debugPrint('MEDIA PLAY/PAUSE ERROR: $e');
+      debugPrint(
+        'MEDIA PLAY/PAUSE ERROR: $e',
+      );
       debugPrint('$st');
     }
 
@@ -224,7 +325,8 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> skipForward() async {
     try {
-      final p = position + const Duration(seconds: 10);
+      final p =
+          position + const Duration(seconds: 10);
 
       await _player.seek(
         p > duration ? duration : p,
@@ -237,7 +339,8 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> skipBackward() async {
     try {
-      final p = position - const Duration(seconds: 10);
+      final p =
+          position - const Duration(seconds: 10);
 
       await _player.seek(
         p < Duration.zero ? Duration.zero : p,
@@ -251,30 +354,39 @@ class AudioPlayerService extends ChangeNotifier {
   void toggleRepeat() {
     _repeat = !_repeat;
 
-    debugPrint('MEDIA: repeat=$_repeat');
+    debugPrint(
+      'MEDIA: repeat=$_repeat',
+    );
 
     notifyListeners();
   }
 
   bool get hasNext {
-    if (_currentLecture == null || _queue.isEmpty) {
+    if (_currentLecture == null ||
+        _queue.isEmpty) {
       return false;
     }
 
     final i = _queue.indexWhere(
-      (l) => l.audioUrl == _currentLecture!.audioUrl,
+      (l) =>
+          l.audioUrl ==
+          _currentLecture!.audioUrl,
     );
 
-    return i != -1 && i < _queue.length - 1;
+    return i != -1 &&
+        i < _queue.length - 1;
   }
 
   bool get hasPrevious {
-    if (_currentLecture == null || _queue.isEmpty) {
+    if (_currentLecture == null ||
+        _queue.isEmpty) {
       return false;
     }
 
     final i = _queue.indexWhere(
-      (l) => l.audioUrl == _currentLecture!.audioUrl,
+      (l) =>
+          l.audioUrl ==
+          _currentLecture!.audioUrl,
     );
 
     return i > 0;
@@ -282,15 +394,21 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> playNext() async {
     if (!hasNext) {
-      debugPrint('MEDIA: no next lecture');
+      debugPrint(
+        'MEDIA: no next lecture',
+      );
       return;
     }
 
     final i = _queue.indexWhere(
-      (l) => l.audioUrl == _currentLecture!.audioUrl,
+      (l) =>
+          l.audioUrl ==
+          _currentLecture!.audioUrl,
     );
 
-    debugPrint('MEDIA: playing next lecture');
+    debugPrint(
+      'MEDIA: playing next lecture',
+    );
 
     await playLecture(
       _queue[i + 1],
@@ -300,15 +418,21 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> playPrevious() async {
     if (!hasPrevious) {
-      debugPrint('MEDIA: no previous lecture');
+      debugPrint(
+        'MEDIA: no previous lecture',
+      );
       return;
     }
 
     final i = _queue.indexWhere(
-      (l) => l.audioUrl == _currentLecture!.audioUrl,
+      (l) =>
+          l.audioUrl ==
+          _currentLecture!.audioUrl,
     );
 
-    debugPrint('MEDIA: playing previous lecture');
+    debugPrint(
+      'MEDIA: playing previous lecture',
+    );
 
     await playLecture(
       _queue[i - 1],
