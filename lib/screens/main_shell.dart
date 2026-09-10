@@ -8,6 +8,7 @@ import 'categories_tab.dart';
 import 'downloads_favorites_tab.dart';
 import 'settings_tab.dart';
 import 'full_player.dart';
+import 'notifications_page.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -34,7 +35,8 @@ class _MainShellState extends State<MainShell> {
 
     _tabs = [
       HomeTab(
-        onNavigateToCategories: () => setState(() => _currentIndex = 2),
+        onNavigateToCategories: () =>
+            setState(() => _currentIndex = 2),
       ),
       const AllLecturesTab(),
       const CategoriesTab(),
@@ -181,7 +183,9 @@ class _MiniPlayerState extends State<_MiniPlayer>
 
   @override
   void dispose() {
-    AudioPlayerService.instance.removeListener(_audioServiceChanged);
+    AudioPlayerService.instance.removeListener(
+      _audioServiceChanged,
+    );
     _pulseController.dispose();
     super.dispose();
   }
@@ -251,12 +255,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
 
         final pulse = _pulseController.value;
 
-        /*
-         * Pulse جديد:
-         *
-         * لا يوجد شعاع ضوء متحرك.
-         * المستطيل نفسه ينبض بهدوء أثناء التشغيل.
-         */
         final borderOpacity = isPlaying
             ? 0.38 + (pulse * 0.32)
             : 0.4;
@@ -267,13 +265,10 @@ class _MiniPlayerState extends State<_MiniPlayer>
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-
           onHorizontalDragUpdate:
               isPlaying ? null : _onDragUpdate,
-
           onHorizontalDragEnd:
               isPlaying ? null : _onDragEnd,
-
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -281,7 +276,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
               ),
             );
           },
-
           child: AnimatedSlide(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
@@ -296,10 +290,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
                 ),
                 decoration: BoxDecoration(
                   color: AppColors.cardDark,
-
-                  /*
-                   * الحدود تنبض بدل شعاع الضوء.
-                   */
                   border: Border(
                     top: BorderSide(
                       color: AppColors.primaryTeal.withOpacity(
@@ -308,11 +298,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
                       width: borderWidth,
                     ),
                   ),
-
-                  /*
-                   * Shadow نبضي خفيف جدًا يعطي إحساس
-                   * بأن المستطيل يتنفس أثناء التشغيل.
-                   */
                   boxShadow: [
                     if (isPlaying)
                       BoxShadow(
@@ -323,7 +308,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
                         spreadRadius: pulse * 0.8,
                         offset: const Offset(0, -1),
                       ),
-
                     BoxShadow(
                       color: Colors.black.withOpacity(0.25),
                       blurRadius: 10,
@@ -331,10 +315,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
                     ),
                   ],
                 ),
-
-                /*
-                 * لا يوجد هنا أي PositionedFill أو شعاع ضوء.
-                 */
                 child: Row(
                   children: [
                     Container(
@@ -372,9 +352,7 @@ class _MiniPlayerState extends State<_MiniPlayer>
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 10),
-
                     Expanded(
                       child: Column(
                         crossAxisAlignment:
@@ -401,7 +379,6 @@ class _MiniPlayerState extends State<_MiniPlayer>
                         ],
                       ),
                     ),
-
                     IconButton(
                       onPressed: () =>
                           audioService.togglePlayPause(),
@@ -474,9 +451,7 @@ class _TopHeader extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(width: 12),
-
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -497,23 +472,34 @@ class _TopHeader extends StatelessWidget {
                   ),
                 ],
               ),
-
               const Spacer(),
 
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.cardDark,
-                  border: Border.all(
-                    color: AppColors.cardGradientStart.withOpacity(0.5),
+              // زر الإشعارات
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const NotificationsPage(),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.cardDark,
+                    border: Border.all(
+                      color: AppColors.cardGradientStart
+                          .withOpacity(0.5),
+                    ),
                   ),
-                ),
-                child: Icon(
-                  Icons.notifications_rounded,
-                  size: 16,
-                  color: AppColors.secondaryText,
+                  child: Icon(
+                    Icons.notifications_rounded,
+                    size: 16,
+                    color: AppColors.secondaryText,
+                  ),
                 ),
               ),
             ],
