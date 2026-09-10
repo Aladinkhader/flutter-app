@@ -88,6 +88,11 @@ class AudioPlayerService extends ChangeNotifier {
     });
 
     _player.sequenceStateStream.listen((sequenceState) {
+      if (sequenceState == null) {
+        debugPrint('MEDIA SEQUENCE: empty');
+        return;
+      }
+
       debugPrint(
         'MEDIA SEQUENCE: '
         'index=${sequenceState.currentIndex}, '
@@ -99,8 +104,7 @@ class AudioPlayerService extends ChangeNotifier {
       (event) {
         debugPrint(
           'MEDIA EVENT: '
-          'processing=${event.processingState}, '
-          'position=${event.position}',
+          'processing=${event.processingState}',
         );
       },
       onError: (Object error, StackTrace stackTrace) {
