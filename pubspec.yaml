@@ -19,6 +19,7 @@ dependencies:
   path_provider: ^2.1.4
   dio: ^5.7.0
   percent_indicator: ^4.2.3
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:
