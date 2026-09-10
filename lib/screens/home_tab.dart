@@ -5,6 +5,7 @@ import '../services/archive_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/favorites_service.dart';
 import '../services/downloads_service.dart';
+import '../services/share_service.dart';
 import '../widgets/shimmer_lecture_card.dart';
 import '../widgets/pulsing_border.dart';
 import '../widgets/glow_border.dart';
@@ -12,7 +13,11 @@ import 'full_player.dart';
 
 class HomeTab extends StatefulWidget {
   final VoidCallback onNavigateToCategories;
-  const HomeTab({super.key, required this.onNavigateToCategories});
+
+  const HomeTab({
+    super.key,
+    required this.onNavigateToCategories,
+  });
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -34,8 +39,10 @@ class _HomeTabState extends State<HomeTab> {
       _loading = true;
       _error = false;
     });
+
     try {
       final lectures = await ArchiveService.fetchFeaturedMix();
+
       setState(() {
         _lectures = lectures;
         _loading = false;
@@ -48,19 +55,35 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
-  void _openLecture(Lecture lecture, List<Lecture> queue) {
-    AudioPlayerService.instance.playLecture(lecture, queue: queue);
+  void _openLecture(
+    Lecture lecture,
+    List<Lecture> queue,
+  ) {
+    AudioPlayerService.instance.playLecture(
+      lecture,
+      queue: queue,
+    );
+
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const FullPlayerScreen()),
+      MaterialPageRoute(
+        builder: (_) => const FullPlayerScreen(),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        100,
+      ),
       children: [
-        _WelcomeCard(onBrowseTap: widget.onNavigateToCategories),
+        _WelcomeCard(
+          onBrowseTap: widget.onNavigateToCategories,
+        ),
         const SizedBox(height: 24),
         Text(
           'مختارات من المحاضرات',
@@ -78,32 +101,49 @@ class _HomeTabState extends State<HomeTab> {
 
   Widget _buildContent() {
     if (_loading) {
-      return const ShimmerLectureList(count: 4);
+      return const ShimmerLectureList(
+        count: 4,
+      );
     }
 
-    if (_error || _lectures == null || _lectures!.isEmpty) {
+    if (_error ||
+        _lectures == null ||
+        _lectures!.isEmpty) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        padding: const EdgeInsets.symmetric(
+          vertical: 24,
+        ),
         child: Column(
           children: [
-            Icon(Icons.wifi_off_rounded,
-                color: AppColors.secondaryText.withOpacity(0.6), size: 32),
+            Icon(
+              Icons.wifi_off_rounded,
+              color:
+                  AppColors.secondaryText.withOpacity(0.6),
+              size: 32,
+            ),
             const SizedBox(height: 10),
             Text(
               'تعذر الاتصال بالإنترنت',
-              style: TextStyle(color: AppColors.secondaryText, fontSize: 12),
+              style: TextStyle(
+                color: AppColors.secondaryText,
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'تأكد من اتصالك وحاول مرة أخرى',
               style: TextStyle(
-                  color: AppColors.secondaryText.withOpacity(0.6),
-                  fontSize: 10),
+                color: AppColors.secondaryText
+                    .withOpacity(0.6),
+                fontSize: 10,
+              ),
             ),
             const SizedBox(height: 12),
             TextButton(
               onPressed: _load,
-              child: const Text('إعادة المحاولة'),
+              child: const Text(
+                'إعادة المحاولة',
+              ),
             ),
           ],
         ),
@@ -112,13 +152,20 @@ class _HomeTabState extends State<HomeTab> {
 
     return Column(
       children: _lectures!
-          .map((lecture) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _LectureCard(
-                  lecture: lecture,
-                  onTap: () => _openLecture(lecture, _lectures!),
+          .map(
+            (lecture) => Padding(
+              padding: const EdgeInsets.only(
+                bottom: 10,
+              ),
+              child: _LectureCard(
+                lecture: lecture,
+                onTap: () => _openLecture(
+                  lecture,
+                  _lectures!,
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -126,10 +173,14 @@ class _HomeTabState extends State<HomeTab> {
 
 class _WelcomeCard extends StatefulWidget {
   final VoidCallback onBrowseTap;
-  const _WelcomeCard({required this.onBrowseTap});
+
+  const _WelcomeCard({
+    required this.onBrowseTap,
+  });
 
   @override
-  State<_WelcomeCard> createState() => _WelcomeCardState();
+  State<_WelcomeCard> createState() =>
+      _WelcomeCardState();
 }
 
 class _WelcomeCardState extends State<_WelcomeCard>
@@ -139,9 +190,12 @@ class _WelcomeCardState extends State<_WelcomeCard>
   @override
   void initState() {
     super.initState();
+
     _autoPulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(
+        milliseconds: 1400,
+      ),
     )..repeat(reverse: true);
   }
 
@@ -159,6 +213,7 @@ class _WelcomeCardState extends State<_WelcomeCard>
         animation: _autoPulseController,
         builder: (context, child) {
           final t = _autoPulseController.value;
+
           return Transform.scale(
             scale: 1.0 + (0.025 * t),
             child: Container(
@@ -168,9 +223,14 @@ class _WelcomeCardState extends State<_WelcomeCard>
                 gradient: AppColors.cardGradient,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.25 + (0.2 * t)),
+                    color: Colors.black.withOpacity(
+                      0.25 + (0.2 * t),
+                    ),
                     blurRadius: 16 + (14 * t),
-                    offset: Offset(0, 6 + (6 * t)),
+                    offset: Offset(
+                      0,
+                      6 + (6 * t),
+                    ),
                   ),
                 ],
               ),
@@ -193,17 +253,26 @@ class _WelcomeCardState extends State<_WelcomeCard>
             ElevatedButton(
               onPressed: widget.onBrowseTap,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryTeal,
-                foregroundColor: AppColors.background,
+                backgroundColor:
+                    AppColors.primaryTeal,
+                foregroundColor:
+                    AppColors.background,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius:
+                      BorderRadius.circular(12),
                 ),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
               ),
               child: const Text(
                 'تصفح كل الأقسام',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -216,10 +285,15 @@ class _WelcomeCardState extends State<_WelcomeCard>
 class _LectureCard extends StatefulWidget {
   final Lecture lecture;
   final VoidCallback onTap;
-  const _LectureCard({required this.lecture, required this.onTap});
+
+  const _LectureCard({
+    required this.lecture,
+    required this.onTap,
+  });
 
   @override
-  State<_LectureCard> createState() => _LectureCardState();
+  State<_LectureCard> createState() =>
+      _LectureCardState();
 }
 
 class _LectureCardState extends State<_LectureCard> {
@@ -227,75 +301,122 @@ class _LectureCardState extends State<_LectureCard> {
 
   void _setPressed(bool value) {
     setState(() => _pressed = value);
+
     if (!value) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) setState(() {});
-      });
+      Future.delayed(
+        const Duration(milliseconds: 500),
+        () {
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final audioService = AudioPlayerService.instance;
-    final favoritesService = FavoritesService.instance;
-    final downloadsService = DownloadsService.instance;
+    final audioService =
+        AudioPlayerService.instance;
+    final favoritesService =
+        FavoritesService.instance;
+    final downloadsService =
+        DownloadsService.instance;
 
     return AnimatedBuilder(
-      animation:
-          Listenable.merge([audioService, favoritesService, downloadsService]),
+      animation: Listenable.merge([
+        audioService,
+        favoritesService,
+        downloadsService,
+      ]),
       builder: (context, _) {
-        final isThisPlaying = audioService.currentLecture?.audioUrl ==
-                widget.lecture.audioUrl &&
-            audioService.isPlaying;
-        final isFav = favoritesService.isFavorite(widget.lecture);
-        final isDownloaded = downloadsService.isDownloaded(widget.lecture);
-        final isDownloading = downloadsService.isDownloading(widget.lecture);
-        final progress = downloadsService.progressFor(widget.lecture);
+        final isThisPlaying =
+            audioService.currentLecture?.audioUrl ==
+                    widget.lecture.audioUrl &&
+                audioService.isPlaying;
+
+        final isFav =
+            favoritesService.isFavorite(
+          widget.lecture,
+        );
+
+        final isDownloaded =
+            downloadsService.isDownloaded(
+          widget.lecture,
+        );
+
+        final isDownloading =
+            downloadsService.isDownloading(
+          widget.lecture,
+        );
+
+        final progress =
+            downloadsService.progressFor(
+          widget.lecture,
+        );
 
         return PulsingGlow(
           active: isThisPlaying,
           child: GestureDetector(
             onTapDown: (_) => _setPressed(true),
-            onTapUp: (_) => setState(() => _pressed = false),
-            onTapCancel: () => setState(() => _pressed = false),
+            onTapUp: (_) =>
+                setState(() => _pressed = false),
+            onTapCancel: () =>
+                setState(() => _pressed = false),
             onTap: widget.onTap,
             child: AnimatedScale(
               scale: _pressed ? 1.02 : 1.0,
-              duration: const Duration(milliseconds: 500),
+              duration:
+                  const Duration(milliseconds: 500),
               curve: Curves.easeOut,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 500),
+                duration:
+                    const Duration(milliseconds: 500),
                 curve: Curves.easeOut,
                 transform:
-                    Matrix4.translationValues(0, _pressed ? -3 : 0, 0),
-                padding: const EdgeInsets.all(12),
+                    Matrix4.translationValues(
+                  0,
+                  _pressed ? -3 : 0,
+                  0,
+                ),
+                padding:
+                    const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _pressed
                       ? const Color(0xFF165652)
                       : AppColors.cardDark,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius:
+                      BorderRadius.circular(14),
                   border: Border.all(
-                    color: _pressed || isThisPlaying
+                    color: _pressed ||
+                            isThisPlaying
                         ? AppColors.primaryTeal
-                        : AppColors.cardGradientStart.withOpacity(0.5),
+                        : AppColors.cardGradientStart
+                            .withOpacity(0.5),
                   ),
                   boxShadow: _pressed
                       ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black
+                                .withOpacity(0.4),
                             blurRadius: 20,
-                            offset: const Offset(0, 10),
+                            offset:
+                                const Offset(0, 10),
                           ),
                           BoxShadow(
-                            color: AppColors.primaryTeal.withOpacity(0.25),
+                            color: AppColors
+                                .primaryTeal
+                                .withOpacity(0.25),
                             blurRadius: 15,
                           ),
                         ]
                       : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black
+                                .withOpacity(0.2),
                             blurRadius: 6,
-                            offset: const Offset(0, 2),
+                            offset:
+                                const Offset(0, 2),
                           ),
                         ],
                 ),
@@ -303,34 +424,50 @@ class _LectureCardState extends State<_LectureCard> {
                   children: [
                     Icon(
                       isThisPlaying
-                          ? Icons.pause_circle_outline
-                          : Icons.play_circle_outline,
-                      color: AppColors.primaryTeal,
+                          ? Icons
+                              .pause_circle_outline
+                          : Icons
+                              .play_circle_outline,
+                      color:
+                          AppColors.primaryTeal,
                       size: 26,
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: isDownloaded || isDownloading
-                          ? null
-                          : () => downloadsService
-                              .downloadLecture(widget.lecture),
+                      onTap:
+                          isDownloaded ||
+                                  isDownloading
+                              ? null
+                              : () =>
+                                  downloadsService
+                                      .downloadLecture(
+                                    widget.lecture,
+                                  ),
                       child: SizedBox(
                         width: 22,
                         height: 22,
                         child: isDownloading
                             ? CircularProgressIndicator(
-                                value: progress > 0 ? progress : null,
+                                value: progress > 0
+                                    ? progress
+                                    : null,
                                 strokeWidth: 2,
-                                color: AppColors.primaryTeal,
+                                color: AppColors
+                                    .primaryTeal,
                               )
                             : Icon(
                                 isDownloaded
-                                    ? Icons.check_circle
-                                    : Icons.download_rounded,
+                                    ? Icons
+                                        .check_circle
+                                    : Icons
+                                        .download_rounded,
                                 color: isDownloaded
-                                    ? AppColors.primaryTeal
-                                    : AppColors.secondaryText
-                                        .withOpacity(0.7),
+                                    ? AppColors
+                                        .primaryTeal
+                                    : AppColors
+                                        .secondaryText
+                                        .withOpacity(
+                                            0.7),
                                 size: 20,
                               ),
                       ),
@@ -338,23 +475,29 @@ class _LectureCardState extends State<_LectureCard> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
                           Text(
                             widget.lecture.title,
                             maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            overflow:
+                                TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.mainText,
+                              fontWeight:
+                                  FontWeight.bold,
+                              color:
+                                  AppColors.mainText,
                             ),
                           ),
                           Text(
                             widget.lecture.section,
                             style: TextStyle(
                               fontSize: 10,
-                              color: AppColors.secondaryText.withOpacity(0.8),
+                              color: AppColors
+                                  .secondaryText
+                                  .withOpacity(0.8),
                             ),
                           ),
                         ],
@@ -362,12 +505,31 @@ class _LectureCardState extends State<_LectureCard> {
                     ),
                     GestureDetector(
                       onTap: () =>
-                          favoritesService.toggleFavorite(widget.lecture),
+                          favoritesService
+                              .toggleFavorite(
+                        widget.lecture,
+                      ),
                       child: Icon(
-                        isFav ? Icons.bookmark : Icons.bookmark_border,
+                        isFav
+                            ? Icons.bookmark
+                            : Icons.bookmark_border,
                         color: isFav
                             ? AppColors.primaryTeal
-                            : AppColors.secondaryText.withOpacity(0.7),
+                            : AppColors.secondaryText
+                                .withOpacity(0.7),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () =>
+                          ShareService.shareLecture(
+                        widget.lecture,
+                      ),
+                      child: Icon(
+                        Icons.share_outlined,
+                        color: AppColors.secondaryText
+                            .withOpacity(0.7),
                         size: 20,
                       ),
                     ),
