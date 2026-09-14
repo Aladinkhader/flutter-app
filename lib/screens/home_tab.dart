@@ -84,16 +84,16 @@ class _HomeTabState extends State<HomeTab> {
         _WelcomeCard(
           onBrowseTap: widget.onNavigateToCategories,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 28),
         Text(
           'مختارات من المحاضرات',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: AppColors.lightText,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         _buildContent(),
       ],
     );
@@ -123,19 +123,10 @@ class _HomeTabState extends State<HomeTab> {
             ),
             const SizedBox(height: 10),
             Text(
-              'تعذر الاتصال بالإنترنت',
+              'اتصل بالإنترنت لعرض المحاضرات',
               style: TextStyle(
                 color: AppColors.secondaryText,
                 fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'تأكد من اتصالك وحاول مرة أخرى',
-              style: TextStyle(
-                color: AppColors.secondaryText
-                    .withOpacity(0.6),
-                fontSize: 10,
               ),
             ),
             const SizedBox(height: 12),
@@ -155,7 +146,7 @@ class _HomeTabState extends State<HomeTab> {
           .map(
             (lecture) => Padding(
               padding: const EdgeInsets.only(
-                bottom: 10,
+                bottom: 14,
               ),
               child: _LectureCard(
                 lecture: lecture,
@@ -299,6 +290,8 @@ class _LectureCard extends StatefulWidget {
 class _LectureCardState extends State<_LectureCard> {
   bool _pressed = false;
 
+  static const Color _gold = Color(0xFFD6B56E);
+
   void _setPressed(bool value) {
     setState(() => _pressed = value);
 
@@ -351,9 +344,9 @@ class _LectureCardState extends State<_LectureCard> {
         );
 
         final progress =
-            downloadsService.progressFor(
-          widget.lecture,
-        );
+            downloadsService
+                .progressFor(widget.lecture)
+                .clamp(0.0, 1.0);
 
         return PulsingGlow(
           active: isThisPlaying,
@@ -365,13 +358,13 @@ class _LectureCardState extends State<_LectureCard> {
                 setState(() => _pressed = false),
             onTap: widget.onTap,
             child: AnimatedScale(
-              scale: _pressed ? 1.02 : 1.0,
+              scale: _pressed ? 1.015 : 1.0,
               duration:
-                  const Duration(milliseconds: 500),
+                  const Duration(milliseconds: 300),
               curve: Curves.easeOut,
               child: AnimatedContainer(
                 duration:
-                    const Duration(milliseconds: 500),
+                    const Duration(milliseconds: 350),
                 curve: Curves.easeOut,
                 transform:
                     Matrix4.translationValues(
@@ -380,19 +373,27 @@ class _LectureCardState extends State<_LectureCard> {
                   0,
                 ),
                 padding:
-                    const EdgeInsets.all(12),
+                    const EdgeInsets.fromLTRB(
+                  14,
+                  16,
+                  14,
+                  16,
+                ),
                 decoration: BoxDecoration(
                   color: _pressed
                       ? const Color(0xFF165652)
                       : AppColors.cardDark,
                   borderRadius:
-                      BorderRadius.circular(14),
+                      BorderRadius.circular(17),
                   border: Border.all(
-                    color: _pressed ||
-                            isThisPlaying
-                        ? AppColors.primaryTeal
-                        : AppColors.cardGradientStart
-                            .withOpacity(0.5),
+                    width: isThisPlaying ? 1.5 : 1,
+                    color: isThisPlaying
+                        ? _gold
+                        : _pressed
+                            ? AppColors.primaryTeal
+                            : AppColors
+                                .cardGradientStart
+                                .withOpacity(0.5),
                   ),
                   boxShadow: _pressed
                       ? [
@@ -414,65 +415,120 @@ class _LectureCardState extends State<_LectureCard> {
                           BoxShadow(
                             color: Colors.black
                                 .withOpacity(0.2),
-                            blurRadius: 6,
+                            blurRadius: 7,
                             offset:
-                                const Offset(0, 2),
+                                const Offset(0, 3),
                           ),
                         ],
                 ),
                 child: Row(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.center,
                   children: [
-                    Icon(
-                      isThisPlaying
-                          ? Icons
-                              .pause_circle_outline
-                          : Icons
-                              .play_circle_outline,
-                      color:
-                          AppColors.primaryTeal,
-                      size: 26,
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: _gold.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _gold.withOpacity(0.35),
+                        ),
+                      ),
+                      child: Icon(
+                        isThisPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        color: _gold,
+                        size: 27,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     GestureDetector(
                       onTap:
                           isDownloaded ||
                                   isDownloading
                               ? null
-                              : () =>
-                                  downloadsService
-                                      .downloadLecture(
-                                    widget.lecture,
-                                  ),
+                              : () => downloadsService
+                                  .downloadLecture(
+                                widget.lecture,
+                              ),
                       child: SizedBox(
-                        width: 22,
-                        height: 22,
+                        width: 34,
+                        height: 34,
                         child: isDownloading
-                            ? CircularProgressIndicator(
-                                value: progress > 0
-                                    ? progress
-                                    : null,
-                                strokeWidth: 2,
-                                color: AppColors
-                                    .primaryTeal,
+                            ? Stack(
+                                alignment:
+                                    Alignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 32,
+                                    height: 32,
+                                    child:
+                                        TweenAnimationBuilder<
+                                            double>(
+                                      tween:
+                                          Tween<double>(
+                                        begin: 0,
+                                        end: progress,
+                                      ),
+                                      duration:
+                                          const Duration(
+                                        milliseconds: 250,
+                                      ),
+                                      curve:
+                                          Curves.easeOut,
+                                      builder: (
+                                        context,
+                                        animatedProgress,
+                                        _,
+                                      ) {
+                                        return CircularProgressIndicator(
+                                          value:
+                                              animatedProgress,
+                                          strokeWidth: 2.5,
+                                          backgroundColor:
+                                              _gold.withOpacity(
+                                            0.18,
+                                          ),
+                                          color: _gold,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  AnimatedSwitcher(
+                                    duration:
+                                        const Duration(
+                                      milliseconds: 180,
+                                    ),
+                                    child: Text(
+                                      '${(progress * 100).round()}%',
+                                      key: ValueKey(
+                                        (progress * 100)
+                                            .round(),
+                                      ),
+                                      style:
+                                          const TextStyle(
+                                        fontSize: 7,
+                                        fontWeight:
+                                            FontWeight.bold,
+                                        color: _gold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               )
                             : Icon(
                                 isDownloaded
-                                    ? Icons
-                                        .check_circle
+                                    ? Icons.check_circle
                                     : Icons
                                         .download_rounded,
-                                color: isDownloaded
-                                    ? AppColors
-                                        .primaryTeal
-                                    : AppColors
-                                        .secondaryText
-                                        .withOpacity(
-                                            0.7),
-                                size: 20,
+                                color: _gold,
+                                size: 22,
                               ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment:
@@ -480,19 +536,24 @@ class _LectureCardState extends State<_LectureCard> {
                         children: [
                           Text(
                             widget.lecture.title,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow:
                                 TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 14,
+                              height: 1.45,
                               fontWeight:
                                   FontWeight.bold,
                               color:
                                   AppColors.mainText,
                             ),
                           ),
+                          const SizedBox(height: 5),
                           Text(
                             widget.lecture.section,
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 10,
                               color: AppColors
@@ -503,6 +564,7 @@ class _LectureCardState extends State<_LectureCard> {
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () =>
                           favoritesService
@@ -513,14 +575,11 @@ class _LectureCardState extends State<_LectureCard> {
                         isFav
                             ? Icons.bookmark
                             : Icons.bookmark_border,
-                        color: isFav
-                            ? AppColors.primaryTeal
-                            : AppColors.secondaryText
-                                .withOpacity(0.7),
-                        size: 20,
+                        color: _gold,
+                        size: 22,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     GestureDetector(
                       onTap: () =>
                           ShareService.shareLecture(
