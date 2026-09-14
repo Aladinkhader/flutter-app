@@ -664,5 +664,3 @@ class _PlayPauseButtonState
       ),
     );
   }
-}
-```0
