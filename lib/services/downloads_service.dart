@@ -1,58 +1,36 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+
 import '../models/lecture.dart';
 
-class DownloadItem {
-  final Lecture lecture;
-  final String localPath;
-
-  DownloadItem({required this.lecture, required this.localPath});
-}
-
 class DownloadsService extends ChangeNotifier {
-  DownloadsService._internal();
-  static final DownloadsService instance = DownloadsService._internal();
+  DownloadsService._();
 
-  static const _key = 'downloads_list_v1';
+  static final DownloadsService instance =
+      DownloadsService._();
+
+  static const String _storageKey = 'downloads_v1';
+
   final Dio _dio = Dio();
 
-  List<DownloadItem> _downloads = [];
-  final Map<String, double> _progress = {}; // audioUrl -> 0.0-1.0
+  final List<Lecture> _downloads = [];
+
+  final Map<String, double> _progress = {};
+
   final Set<String> _downloading = {};
 
-  List<DownloadItem> get downloads => _downloads;
-
-  Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw != null) {
-      try {
-        final List<dynamic> list = jsonDecode(raw);
-        _downloads = list
-            .map((e) => DownloadItem(
-                  lecture: Lecture(
-                    title: e['title'],
-                    section: e['section'],
-                    audioUrl: e['audioUrl'],
-                    identifier: e['identifier'],
-                  ),
-                  localPath: e['localPath'],
-                ))
-            .where((d) => File(d.localPath).existsSync())
-            .toList();
-      } catch (_) {
-        _downloads = [];
-      }
-    }
-    notifyListeners();
-  }
+  List<Lecture> get downloads =>
+      List.unmodifiable(_downloads);
 
   bool isDownloaded(Lecture lecture) {
-    return _downloads.any((d) => d.lecture.audioUrl == lecture.audioUrl);
+    return _downloads.any(
+      (item) => item.audioUrl == lecture.audioUrl,
+    );
   }
 
   bool isDownloading(Lecture lecture) {
@@ -64,78 +42,199 @@ class DownloadsService extends ChangeNotifier {
   }
 
   String? localPathFor(Lecture lecture) {
-    final match = _downloads.firstWhere(
-      (d) => d.lecture.audioUrl == lecture.audioUrl,
-      orElse: () => DownloadItem(lecture: lecture, localPath: ''),
-    );
-    return match.localPath.isEmpty ? null : match.localPath;
+    for (final item in _downloads) {
+      if (item.audioUrl == lecture.audioUrl) {
+        return item.identifier;
+      }
+    }
+
+    return null;
   }
 
-  Future<bool> downloadLecture(Lecture lecture) async {
-    if (isDownloaded(lecture) || isDownloading(lecture)) return false;
+  Future<void> init() async {
+    final prefs =
+        await SharedPreferences.getInstance();
 
-    _downloading.add(lecture.audioUrl);
-    _progress[lecture.audioUrl] = 0.0;
+    final raw = prefs.getString(_storageKey);
+
+    if (raw == null || raw.isEmpty) {
+      return;
+    }
+
+    try {
+      final List<dynamic> data =
+          jsonDecode(raw) as List<dynamic>;
+
+      _downloads.clear();
+
+      for (final item in data) {
+        final map =
+            Map<String, dynamic>.from(item as Map);
+
+        final path =
+            map['localPath']?.toString();
+
+        if (path == null || path.isEmpty) {
+          continue;
+        }
+
+        if (File(path).existsSync()) {
+          _downloads.add(
+            Lecture(
+              title:
+                  map['title']?.toString() ?? '',
+              section:
+                  map['section']?.toString() ?? '',
+              audioUrl:
+                  map['audioUrl']?.toString() ?? '',
+              identifier: path,
+            ),
+          );
+        }
+      }
+
+      notifyListeners();
+    } catch (_) {
+      _downloads.clear();
+    }
+  }
+
+  Future<void> downloadLecture(
+    Lecture lecture,
+  ) async {
+    final url = lecture.audioUrl;
+
+    if (isDownloaded(lecture) ||
+        isDownloading(lecture)) {
+      return;
+    }
+
+    _downloading.add(url);
+    _progress[url] = 0.0;
     notifyListeners();
 
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final safeFileName =
-          '${lecture.identifier}_${lecture.title.hashCode}.mp3';
-      final savePath = '${dir.path}/$safeFileName';
+      final directory =
+          await getApplicationDocumentsDirectory();
+
+      final extension =
+          _fileExtension(url);
+
+      final fileName =
+          '${lecture.identifier}_${DateTime.now().millisecondsSinceEpoch}$extension';
+
+      final filePath =
+          '${directory.path}/$fileName';
 
       await _dio.download(
-        lecture.audioUrl,
-        savePath,
-        onReceiveProgress: (received, total) {
+        url,
+        filePath,
+        onReceiveProgress:
+            (received, total) {
           if (total > 0) {
-            _progress[lecture.audioUrl] = received / total;
+            _progress[url] =
+                (received / total)
+                    .clamp(0.0, 1.0);
+
             notifyListeners();
           }
         },
       );
 
-      _downloads.add(DownloadItem(lecture: lecture, localPath: savePath));
-      _downloading.remove(lecture.audioUrl);
-      _progress.remove(lecture.audioUrl);
+      // إظهار 100% للمستخدم قبل تحويل الزر
+      // إلى علامة الاكتمال.
+      _progress[url] = 1.0;
       notifyListeners();
+
+      await Future.delayed(
+        const Duration(milliseconds: 350),
+      );
+
+      _downloads.add(
+        Lecture(
+          title: lecture.title,
+          section: lecture.section,
+          audioUrl: lecture.audioUrl,
+          identifier: filePath,
+        ),
+      );
+
+      _progress.remove(url);
+
       await _save();
-      return true;
-    } catch (_) {
-      _downloading.remove(lecture.audioUrl);
-      _progress.remove(lecture.audioUrl);
+
       notifyListeners();
-      return false;
+    } catch (_) {
+      _progress.remove(url);
+      notifyListeners();
+    } finally {
+      _downloading.remove(url);
+      notifyListeners();
     }
   }
 
-  Future<void> deleteDownload(Lecture lecture) async {
-    final match = _downloads.firstWhere(
-      (d) => d.lecture.audioUrl == lecture.audioUrl,
-      orElse: () => DownloadItem(lecture: lecture, localPath: ''),
+  Future<void> deleteDownload(
+    Lecture lecture,
+  ) async {
+    final index = _downloads.indexWhere(
+      (item) => item.audioUrl == lecture.audioUrl,
     );
-    if (match.localPath.isNotEmpty) {
-      final file = File(match.localPath);
+
+    if (index == -1) {
+      return;
+    }
+
+    final item = _downloads[index];
+
+    try {
+      final file =
+          File(item.identifier);
+
       if (await file.exists()) {
         await file.delete();
       }
-    }
-    _downloads.removeWhere((d) => d.lecture.audioUrl == lecture.audioUrl);
-    notifyListeners();
+    } catch (_) {}
+
+    _downloads.removeAt(index);
+
     await _save();
+
+    notifyListeners();
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = jsonEncode(_downloads
-        .map((d) => {
-              'title': d.lecture.title,
-              'section': d.lecture.section,
-              'audioUrl': d.lecture.audioUrl,
-              'identifier': d.lecture.identifier,
-              'localPath': d.localPath,
-            })
-        .toList());
-    await prefs.setString(_key, raw);
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    final data = _downloads
+        .map(
+          (lecture) => {
+            'title': lecture.title,
+            'section': lecture.section,
+            'audioUrl': lecture.audioUrl,
+            'localPath': lecture.identifier,
+          },
+        )
+        .toList();
+
+    await prefs.setString(
+      _storageKey,
+      jsonEncode(data),
+    );
+  }
+
+  String _fileExtension(String url) {
+    final cleanUrl =
+        url.split('?').first.toLowerCase();
+
+    if (cleanUrl.endsWith('.m4a')) {
+      return '.m4a';
+    }
+
+    if (cleanUrl.endsWith('.mp3')) {
+      return '.mp3';
+    }
+
+    return '.mp3';
   }
 }
