@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+
 import '../theme/app_colors.dart';
 import '../services/favorites_service.dart';
 import '../services/downloads_service.dart';
 import '../services/archive_service.dart';
 import 'sheikh_bio_dialog.dart';
-import 'debug_log_screen.dart';
 import '../widgets/glow_border.dart';
 
 class SettingsTab extends StatefulWidget {
@@ -19,28 +20,50 @@ class _SettingsTabState extends State<SettingsTab> {
 
   Future<void> _clearCache() async {
     setState(() => _clearing = true);
+
     await ArchiveService.clearCache();
+
     if (!mounted) return;
+
     setState(() => _clearing = false);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.cardDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: AppColors.primaryTeal.withOpacity(0.3)),
+          side: BorderSide(
+            color: AppColors.primaryTeal.withOpacity(0.3),
+          ),
         ),
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: AppColors.primaryTeal, size: 20),
+            Icon(
+              Icons.check_circle,
+              color: AppColors.primaryTeal,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             const Text(
               'تم محو الذاكرة المؤقتة',
-              style: TextStyle(color: AppColors.mainText, fontSize: 13),
+              style: TextStyle(
+                color: AppColors.mainText,
+                fontSize: 13,
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _shareApp() async {
+    await Share.share(
+      'تطبيق الشيخ د. محمد الأمين إسماعيل\n\n'
+      'استمع إلى محاضرات الشيخ واستفد من مكتبته الصوتية.\n\n'
+      'شارك التطبيق مع من تحب.',
+      subject: 'تطبيق الشيخ د. محمد الأمين إسماعيل',
     );
   }
 
@@ -87,20 +110,18 @@ class _SettingsTabState extends State<SettingsTab> {
             onTap: () => showSheikhBioDialog(context),
           ),
         ),
+
         const SizedBox(height: 14),
 
-        // زر مؤقت للتشخيص - هنحذفه لاحقًا
+        // مشاركة التطبيق
         _SettingsCard(
           child: _SettingsItem(
-            title: '(مؤقت) عرض سجل التشخيص',
-            icon: Icons.bug_report_outlined,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const DebugLogScreen()),
-              );
-            },
+            title: 'مشاركة التطبيق',
+            icon: Icons.share_outlined,
+            onTap: _shareApp,
           ),
         ),
+
         const SizedBox(height: 14),
 
         // محو الكاش
@@ -125,7 +146,8 @@ class _SettingsTabState extends State<SettingsTab> {
                       Text(
                         'لفتح أسرع حتى مع ضعف الإنترنت، يحتفظ التطبيق بآخر نسخة من المحاضرات. امسحها فقط إذا أضيفت محاضرات جديدة ولم تظهر بعد.',
                         style: TextStyle(
-                          color: AppColors.secondaryText.withOpacity(0.8),
+                          color:
+                              AppColors.secondaryText.withOpacity(0.8),
                           fontSize: 12,
                           height: 1.6,
                         ),
@@ -151,14 +173,18 @@ class _SettingsTabState extends State<SettingsTab> {
                               color: AppColors.primaryTeal,
                             ),
                           )
-                        : Icon(Icons.delete_sweep_outlined,
-                            color: AppColors.primaryTeal, size: 26),
+                        : Icon(
+                            Icons.delete_sweep_outlined,
+                            color: AppColors.primaryTeal,
+                            size: 26,
+                          ),
                   ),
                 ),
               ],
             ),
           ),
         ),
+
         const SizedBox(height: 18),
 
         // الإحصائيات
@@ -169,7 +195,8 @@ class _SettingsTabState extends State<SettingsTab> {
                 animation: favoritesService,
                 builder: (context, _) => _StatCard(
                   label: 'المفضلة',
-                  value: favoritesService.favorites.length.toString(),
+                  value:
+                      favoritesService.favorites.length.toString(),
                 ),
               ),
             ),
@@ -179,7 +206,8 @@ class _SettingsTabState extends State<SettingsTab> {
                 animation: downloadsService,
                 builder: (context, _) => _StatCard(
                   label: 'التنزيلات',
-                  value: downloadsService.downloads.length.toString(),
+                  value:
+                      downloadsService.downloads.length.toString(),
                 ),
               ),
             ),
@@ -202,7 +230,8 @@ class _SettingsTabState extends State<SettingsTab> {
               ),
               const SizedBox(height: 8),
 
-              // تأثير اللمعان الأخضر المتحرك على اسمك
+              // نفس تأثير اللمعان القديم،
+              // مع اللون الذهبي واتجاه يبدأ من حرف "ع"
               _AnimatedShimmerText(
                 text: 'علاء الدين خضر',
                 style: const TextStyle(
@@ -213,6 +242,7 @@ class _SettingsTabState extends State<SettingsTab> {
               ),
 
               const SizedBox(height: 18),
+
               Text(
                 'تواصل معي',
                 style: TextStyle(
@@ -222,7 +252,9 @@ class _SettingsTabState extends State<SettingsTab> {
                   letterSpacing: 2,
                 ),
               ),
+
               const SizedBox(height: 12),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -247,7 +279,10 @@ class _SettingsTabState extends State<SettingsTab> {
 
 class _SettingsCard extends StatelessWidget {
   final Widget child;
-  const _SettingsCard({required this.child});
+
+  const _SettingsCard({
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +290,9 @@ class _SettingsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardDark,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardGradientStart.withOpacity(0.4)),
+        border: Border.all(
+          color: AppColors.cardGradientStart.withOpacity(0.4),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.15),
@@ -296,7 +333,9 @@ class _SettingsItemState extends State<_SettingsItem> {
       onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        color: _pressed ? const Color(0xFF165652) : Colors.transparent,
+        color: _pressed
+            ? const Color(0xFF165652)
+            : Colors.transparent,
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
@@ -306,10 +345,15 @@ class _SettingsItemState extends State<_SettingsItem> {
                 style: const TextStyle(
                   color: AppColors.mainText,
                   fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            Icon(widget.icon, color: AppColors.primaryTeal, size: 22),
+            Icon(
+              widget.icon,
+              color: AppColors.primaryTeal,
+              size: 22,
+            ),
           ],
         ),
       ),
@@ -320,7 +364,11 @@ class _SettingsItemState extends State<_SettingsItem> {
 class _StatCard extends StatelessWidget {
   final String label;
   final String value;
-  const _StatCard({required this.label, required this.value});
+
+  const _StatCard({
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -329,13 +377,18 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardDark,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardGradientStart.withOpacity(0.4)),
+        border: Border.all(
+          color: AppColors.cardGradientStart.withOpacity(0.4),
+        ),
       ),
       child: Column(
         children: [
           Text(
             label,
-            style: TextStyle(color: AppColors.secondaryText, fontSize: 12),
+            style: TextStyle(
+              color: AppColors.secondaryText,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -355,7 +408,11 @@ class _StatCard extends StatelessWidget {
 class _SocialButton extends StatelessWidget {
   final IconData icon;
   final Color color;
-  const _SocialButton({required this.icon, required this.color});
+
+  const _SocialButton({
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -365,14 +422,20 @@ class _SocialButton extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color.withOpacity(0.1),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(
+          color: color.withOpacity(0.4),
+        ),
       ),
-      child: Icon(icon, color: color, size: 24),
+      child: Icon(
+        icon,
+        color: color,
+        size: 24,
+      ),
     );
   }
 }
 
-// Widget التأثير المتحرك على الاسم
+// نفس تأثير اللمعان القديم على الاسم
 class _AnimatedShimmerText extends StatefulWidget {
   final String text;
   final TextStyle style;
@@ -383,7 +446,8 @@ class _AnimatedShimmerText extends StatefulWidget {
   });
 
   @override
-  State<_AnimatedShimmerText> createState() => _AnimatedShimmerTextState();
+  State<_AnimatedShimmerText> createState() =>
+      _AnimatedShimmerTextState();
 }
 
 class _AnimatedShimmerTextState extends State<_AnimatedShimmerText>
@@ -393,7 +457,7 @@ class _AnimatedShimmerTextState extends State<_AnimatedShimmerText>
   @override
   void initState() {
     super.initState();
-    // سرعة الحركة: 1600 مللي ثانية لحركة سلسة وجذابة
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
@@ -414,21 +478,31 @@ class _AnimatedShimmerTextState extends State<_AnimatedShimmerText>
         return ShaderMask(
           blendMode: BlendMode.srcIn,
           shaderCallback: (bounds) {
+            // يبدأ اللمعان من جهة بداية الاسم العربي
+            // ثم يتحرك باتجاه بقية الاسم.
+            final position =
+                2.0 - (_controller.value * 4.0);
+
             return LinearGradient(
-              colors: [
+              colors: const [
                 AppColors.mainText,
-                AppColors.primaryTeal, // لون أخضر التطبيق نفسه
+                Color(0xFFD6B56E),
                 AppColors.mainText,
               ],
-              stops: const [0.0, 0.5, 1.0],
-              begin: Alignment(-2.0 + (_controller.value * 4.0), 0.0),
-              end: Alignment(-1.0 + (_controller.value * 4.0), 0.0),
+              stops: const [
+                0.0,
+                0.5,
+                1.0,
+              ],
+              begin: Alignment(position, 0.0),
+              end: Alignment(position + 1.0, 0.0),
             ).createShader(bounds);
           },
           child: Text(
             widget.text,
             style: widget.style,
             textAlign: TextAlign.center,
+            textDirection: TextDirection.rtl,
           ),
         );
       },
