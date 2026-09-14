@@ -86,7 +86,8 @@ class _MainShellState extends State<MainShell> {
             const _MiniPlayer(),
             BottomNavigationBar(
               currentIndex: _currentIndex,
-              onTap: (i) => setState(() => _currentIndex = i),
+              onTap: (i) =>
+                  setState(() => _currentIndex = i),
               items: const [
                 BottomNavigationBarItem(
                   icon: Icon(Icons.home_rounded),
@@ -126,6 +127,8 @@ class _MiniPlayer extends StatefulWidget {
 
 class _MiniPlayerState extends State<_MiniPlayer>
     with SingleTickerProviderStateMixin {
+  static const Color _gold = Color(0xFFD6B56E);
+
   late final AnimationController _pulseController;
 
   double _dragOffset = 0;
@@ -263,6 +266,12 @@ class _MiniPlayerState extends State<_MiniPlayer>
             ? 1.0 + (pulse * 0.8)
             : 1.0;
 
+        final progress = audioService.duration.inMilliseconds > 0
+            ? (audioService.position.inMilliseconds /
+                    audioService.duration.inMilliseconds)
+                .clamp(0.0, 1.0)
+            : 0.0;
+
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onHorizontalDragUpdate:
@@ -284,16 +293,12 @@ class _MiniPlayerState extends State<_MiniPlayer>
               duration: const Duration(milliseconds: 220),
               opacity: _dismissed ? 0 : 1,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
                 decoration: BoxDecoration(
                   color: AppColors.cardDark,
                   border: Border(
                     top: BorderSide(
-                      color: AppColors.primaryTeal.withOpacity(
-                        borderOpacity,
+                      color: _gold.withOpacity(
+                        isPlaying ? borderOpacity : 0.25,
                       ),
                       width: borderWidth,
                     ),
@@ -301,8 +306,8 @@ class _MiniPlayerState extends State<_MiniPlayer>
                   boxShadow: [
                     if (isPlaying)
                       BoxShadow(
-                        color: AppColors.primaryTeal.withOpacity(
-                          0.05 + (pulse * 0.10),
+                        color: _gold.withOpacity(
+                          0.04 + (pulse * 0.08),
                         ),
                         blurRadius: 5 + (pulse * 7),
                         spreadRadius: pulse * 0.8,
@@ -315,79 +320,113 @@ class _MiniPlayerState extends State<_MiniPlayer>
                     ),
                   ],
                 ),
-                child: Row(
+                child: Stack(
                   children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primaryTeal.withOpacity(
-                            isPlaying
-                                ? 0.45 + (pulse * 0.30)
-                                : 0.5,
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerRight,
+                        widthFactor: progress,
+                        child: Container(
+                          height: 2,
+                          decoration: BoxDecoration(
+                            color: _gold,
+                            borderRadius:
+                                BorderRadius.circular(2),
                           ),
-                          width: isPlaying
-                              ? 1.0 + (pulse * 0.6)
-                              : 1.0,
-                        ),
-                        boxShadow: isPlaying
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.primaryTeal
-                                      .withOpacity(
-                                    0.04 + (pulse * 0.08),
-                                  ),
-                                  blurRadius: 4 + (pulse * 5),
-                                  spreadRadius: pulse * 0.4,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/sheikh.jpg',
-                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Row(
                         children: [
-                          Text(
-                            lecture.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.tajawal(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.mainText,
+                          AnimatedContainer(
+                            duration:
+                                const Duration(milliseconds: 180),
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: _gold.withOpacity(
+                                  isPlaying
+                                      ? 0.45 + (pulse * 0.30)
+                                      : 0.5,
+                                ),
+                                width: isPlaying
+                                    ? 1.0 + (pulse * 0.6)
+                                    : 1.0,
+                              ),
+                              boxShadow: isPlaying
+                                  ? [
+                                      BoxShadow(
+                                        color: _gold.withOpacity(
+                                          0.04 + (pulse * 0.08),
+                                        ),
+                                        blurRadius:
+                                            4 + (pulse * 5),
+                                        spreadRadius:
+                                            pulse * 0.4,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/images/sheikh.jpg',
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
-                          Text(
-                            lecture.section,
-                            style: GoogleFonts.tajawal(
-                              fontSize: 10,
-                              color: AppColors.secondaryText
-                                  .withOpacity(0.8),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  lecture.title,
+                                  maxLines: 1,
+                                  overflow:
+                                      TextOverflow.ellipsis,
+                                  style: GoogleFonts.tajawal(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        AppColors.mainText,
+                                  ),
+                                ),
+                                Text(
+                                  lecture.section,
+                                  style: GoogleFonts.tajawal(
+                                    fontSize: 10,
+                                    color: AppColors
+                                        .secondaryText
+                                        .withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () =>
+                                audioService
+                                    .togglePlayPause(),
+                            icon: Icon(
+                              audioService.isPlaying
+                                  ? Icons.pause_circle_filled
+                                  : Icons.play_circle_filled,
+                              color: _gold,
+                              size: 32,
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () =>
-                          audioService.togglePlayPause(),
-                      icon: Icon(
-                        audioService.isPlaying
-                            ? Icons.pause_circle_filled
-                            : Icons.play_circle_filled,
-                        color: AppColors.primaryTeal,
-                        size: 32,
                       ),
                     ),
                   ],
@@ -415,7 +454,8 @@ class _TopHeader extends StatelessWidget {
         color: AppColors.background.withOpacity(0.95),
         border: Border(
           bottom: BorderSide(
-            color: AppColors.cardGradientStart.withOpacity(0.4),
+            color:
+                AppColors.cardGradientStart.withOpacity(0.4),
           ),
         ),
         boxShadow: [
@@ -441,7 +481,8 @@ class _TopHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppColors.primaryTeal.withOpacity(0.4),
+                    color:
+                        _gold.withOpacity(0.4),
                   ),
                 ),
                 child: ClipOval(
@@ -453,7 +494,8 @@ class _TopHeader extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
                     'الشيخ د. محمد الأمين إسماعيل',
@@ -473,8 +515,6 @@ class _TopHeader extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-
-              // زر الإشعارات
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(
@@ -491,14 +531,13 @@ class _TopHeader extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: AppColors.cardDark,
                     border: Border.all(
-                      color: AppColors.cardGradientStart
-                          .withOpacity(0.5),
+                      color: _gold.withOpacity(0.5),
                     ),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.notifications_rounded,
                     size: 16,
-                    color: AppColors.secondaryText,
+                    color: _gold,
                   ),
                 ),
               ),
@@ -508,4 +547,6 @@ class _TopHeader extends StatelessWidget {
       ),
     );
   }
+
+  static const Color _gold = Color(0xFFD6B56E);
 }
