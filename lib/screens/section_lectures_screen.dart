@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/lecture.dart';
+import '../services/archive_service.dart';
 import '../services/audio_player_service.dart';
 import '../services/favorites_service.dart';
 import '../services/downloads_service.dart';
@@ -9,13 +10,13 @@ import '../widgets/pulsing_border.dart';
 import 'full_player.dart';
 
 class SectionLecturesScreen extends StatefulWidget {
+  final String identifier;
   final String sectionTitle;
-  final List<Lecture> lectures;
 
   const SectionLecturesScreen({
     super.key,
+    required this.identifier,
     required this.sectionTitle,
-    required this.lectures,
   });
 
   @override
@@ -23,39 +24,70 @@ class SectionLecturesScreen extends StatefulWidget {
       _SectionLecturesScreenState();
 }
 
-class _SectionLecturesScreenState
-    extends State<SectionLecturesScreen> {
-  late List<Lecture> _lectures;
-  final TextEditingController _searchController =
-      TextEditingController();
+class _SectionLecturesScreenState extends State<SectionLecturesScreen> {
+  List<Lecture> _lectures = [];
+  List<Lecture> _filteredLectures = [];
+  final TextEditingController _searchController = TextEditingController();
+
+  bool _loading = true;
+  bool _error = false;
 
   @override
   void initState() {
     super.initState();
-    _lectures = List<Lecture>.from(widget.lectures);
     _searchController.addListener(_filterLectures);
+    _load();
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_filterLectures);
     _searchController.dispose();
     super.dispose();
   }
 
+  Future<void> _load() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = false;
+      });
+    }
+
+    try {
+      final lectures = await ArchiveService.fetchSectionLectures(
+        widget.identifier,
+        widget.sectionTitle,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _lectures = lectures;
+        _filteredLectures = lectures;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _error = true;
+        _loading = false;
+      });
+    }
+  }
+
   void _filterLectures() {
-    final query =
-        _searchController.text.trim().toLowerCase();
+    final query = _searchController.text.trim().toLowerCase();
 
     setState(() {
       if (query.isEmpty) {
-        _lectures = List<Lecture>.from(widget.lectures);
+        _filteredLectures = List<Lecture>.from(_lectures);
       } else {
-        _lectures = widget.lectures
+        _filteredLectures = _lectures
             .where(
               (lecture) =>
-                  lecture.title
-                      .toLowerCase()
-                      .contains(query),
+                  lecture.title.toLowerCase().contains(query),
             )
             .toList();
       }
@@ -65,7 +97,7 @@ class _SectionLecturesScreenState
   void _openLecture(Lecture lecture) {
     AudioPlayerService.instance.playLecture(
       lecture,
-      queue: _lectures,
+      queue: _filteredLectures.isEmpty ? [lecture] : _filteredLectures,
     );
 
     Navigator.of(context).push(
@@ -113,45 +145,33 @@ class _SectionLecturesScreenState
               decoration: InputDecoration(
                 hintText: 'بحث في المحاضرات...',
                 hintStyle: TextStyle(
-                  color: AppColors.secondaryText
-                      .withOpacity(0.6),
+                  color: AppColors.secondaryText.withOpacity(0.6),
                   fontSize: 12,
                 ),
                 filled: true,
                 fillColor: AppColors.cardDark,
                 prefixIcon: Icon(
                   Icons.search,
-                  color: AppColors.secondaryText
-                      .withOpacity(0.6),
+                  color: AppColors.secondaryText.withOpacity(0.6),
                   size: 18,
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(
+                contentPadding: const EdgeInsets.symmetric(
                   vertical: 0,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: AppColors
-                        .cardGradientStart
-                        .withOpacity(0.5),
+                    color: AppColors.cardGradientStart.withOpacity(0.5),
                   ),
                 ),
-                enabledBorder:
-                    OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(12),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: AppColors
-                        .cardGradientStart
-                        .withOpacity(0.5),
+                    color: AppColors.cardGradientStart.withOpacity(0.5),
                   ),
                 ),
-                focusedBorder:
-                    OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(12),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
                     color: AppColors.primaryTeal,
                   ),
@@ -160,48 +180,85 @@ class _SectionLecturesScreenState
             ),
             const SizedBox(height: 14),
             Expanded(
-              child: _lectures.isEmpty
-                  ? Center(
-                      child: Text(
-                        'لا توجد نتائج',
-                        style: TextStyle(
-                          color: AppColors
-                              .secondaryText
-                              .withOpacity(0.7),
-                          fontSize: 12,
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding:
-                          const EdgeInsets.only(
-                        bottom: 90,
-                      ),
-                      itemCount: _lectures.length,
-                      itemBuilder:
-                          (context, index) {
-                        final lecture =
-                            _lectures[index];
-
-                        return Padding(
-                          padding:
-                              const EdgeInsets.only(
-                            bottom: 14,
-                          ),
-                          child: _LectureRow(
-                            lecture: lecture,
-                            onTap: () =>
-                                _openLecture(
-                              lecture,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+              child: _buildContent(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFD6B56E),
+        ),
+      );
+    }
+
+    if (_error) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'اتصل بالإنترنت لعرض المحاضرات',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.secondaryText.withOpacity(0.8),
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _load,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryTeal,
+                foregroundColor: AppColors.mainText,
+              ),
+              child: const Text(
+                'إعادة المحاولة',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_filteredLectures.isEmpty) {
+      return Center(
+        child: Text(
+          'لا توجد نتائج',
+          style: TextStyle(
+            color: AppColors.secondaryText.withOpacity(0.7),
+            fontSize: 12,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(
+        bottom: 90,
+      ),
+      itemCount: _filteredLectures.length,
+      itemBuilder: (context, index) {
+        final lecture = _filteredLectures[index];
+
+        return Padding(
+          padding: const EdgeInsets.only(
+            bottom: 14,
+          ),
+          child: _LectureRow(
+            lecture: lecture,
+            onTap: () => _openLecture(lecture),
+          ),
+        );
+      },
     );
   }
 }
@@ -216,25 +273,19 @@ class _LectureRow extends StatefulWidget {
   });
 
   @override
-  State<_LectureRow> createState() =>
-      _LectureRowState();
+  State<_LectureRow> createState() => _LectureRowState();
 }
 
-class _LectureRowState
-    extends State<_LectureRow> {
+class _LectureRowState extends State<_LectureRow> {
   bool _pressed = false;
 
-  static const Color _gold =
-      Color(0xFFD6B56E);
+  static const Color _gold = Color(0xFFD6B56E);
 
   @override
   Widget build(BuildContext context) {
-    final audioService =
-        AudioPlayerService.instance;
-    final favoritesService =
-        FavoritesService.instance;
-    final downloadsService =
-        DownloadsService.instance;
+    final audioService = AudioPlayerService.instance;
+    final favoritesService = FavoritesService.instance;
+    final downloadsService = DownloadsService.instance;
 
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -248,53 +299,52 @@ class _LectureRowState
                     widget.lecture.audioUrl &&
                 audioService.isPlaying;
 
-        final isFav =
-            favoritesService.isFavorite(
+        final isFav = favoritesService.isFavorite(
           widget.lecture,
         );
 
-        final isDownloaded =
-            downloadsService.isDownloaded(
+        final isDownloaded = downloadsService.isDownloaded(
           widget.lecture,
         );
 
-        final isDownloading =
-            downloadsService.isDownloading(
+        final isDownloading = downloadsService.isDownloading(
           widget.lecture,
         );
 
-        final progress =
-            downloadsService
-                .progressFor(widget.lecture)
-                .clamp(0.0, 1.0);
+        final progress = downloadsService
+            .progressFor(widget.lecture)
+            .clamp(0.0, 1.0);
 
         return PulsingGlow(
           active: isThisPlaying,
           child: GestureDetector(
-            onTapDown: (_) =>
-                setState(() => _pressed = true),
-            onTapUp: (_) =>
-                setState(() => _pressed = false),
-            onTapCancel: () =>
-                setState(() => _pressed = false),
+            onTapDown: (_) {
+              setState(() => _pressed = true);
+            },
+            onTapUp: (_) {
+              setState(() => _pressed = false);
+            },
+            onTapCancel: () {
+              setState(() => _pressed = false);
+            },
             onTap: widget.onTap,
             child: AnimatedScale(
               scale: _pressed ? 1.02 : 1.0,
-              duration:
-                  const Duration(milliseconds: 300),
+              duration: const Duration(
+                milliseconds: 300,
+              ),
               curve: Curves.easeOut,
               child: AnimatedContainer(
-                duration:
-                    const Duration(milliseconds: 350),
+                duration: const Duration(
+                  milliseconds: 350,
+                ),
                 curve: Curves.easeOut,
-                transform:
-                    Matrix4.translationValues(
+                transform: Matrix4.translationValues(
                   0,
                   _pressed ? -3 : 0,
                   0,
                 ),
-                padding:
-                    const EdgeInsets.fromLTRB(
+                padding: const EdgeInsets.fromLTRB(
                   14,
                   16,
                   14,
@@ -304,27 +354,22 @@ class _LectureRowState
                   color: _pressed
                       ? const Color(0xFF165652)
                       : AppColors.cardDark,
-                  borderRadius:
-                      BorderRadius.circular(17),
+                  borderRadius: BorderRadius.circular(17),
                   border: Border.all(
-                    width:
-                        isThisPlaying ? 1.5 : 1,
+                    width: isThisPlaying ? 1.5 : 1,
                     color: isThisPlaying
                         ? _gold
                         : _pressed
                             ? AppColors.primaryTeal
-                            : AppColors
-                                .cardGradientStart
+                            : AppColors.cardGradientStart
                                 .withOpacity(0.5),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black
-                          .withOpacity(
+                      color: Colors.black.withOpacity(
                         _pressed ? 0.35 : 0.2,
                       ),
-                      blurRadius:
-                          _pressed ? 18 : 7,
+                      blurRadius: _pressed ? 18 : 7,
                       offset: Offset(
                         0,
                         _pressed ? 9 : 3,
@@ -333,19 +378,16 @@ class _LectureRowState
                   ],
                 ),
                 child: Row(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color:
-                            _gold.withOpacity(0.12),
+                        color: _gold.withOpacity(0.12),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color:
-                              _gold.withOpacity(0.35),
+                          color: _gold.withOpacity(0.35),
                         ),
                       ),
                       child: Icon(
@@ -358,74 +400,58 @@ class _LectureRowState
                     ),
                     const SizedBox(width: 10),
                     GestureDetector(
-                      onTap:
-                          isDownloaded ||
-                                  isDownloading
-                              ? null
-                              : () =>
-                                  downloadsService
-                                      .downloadLecture(
-                                    widget.lecture,
-                                  ),
+                      onTap: isDownloaded || isDownloading
+                          ? null
+                          : () => downloadsService.downloadLecture(
+                                widget.lecture,
+                              ),
                       child: SizedBox(
                         width: 34,
                         height: 34,
                         child: isDownloading
                             ? Stack(
-                                alignment:
-                                    Alignment.center,
+                                alignment: Alignment.center,
                                 children: [
                                   SizedBox(
                                     width: 32,
                                     height: 32,
                                     child:
-                                        TweenAnimationBuilder<
-                                            double>(
-                                      tween:
-                                          Tween<double>(
+                                        TweenAnimationBuilder<double>(
+                                      tween: Tween<double>(
                                         begin: 0,
                                         end: progress,
                                       ),
-                                      duration:
-                                          const Duration(
+                                      duration: const Duration(
                                         milliseconds: 250,
                                       ),
-                                      curve:
-                                          Curves.easeOut,
+                                      curve: Curves.easeOut,
                                       builder: (
                                         context,
                                         animatedProgress,
                                         _,
                                       ) {
                                         return CircularProgressIndicator(
-                                          value:
-                                              animatedProgress,
+                                          value: animatedProgress,
                                           strokeWidth: 2.5,
                                           backgroundColor:
-                                              _gold.withOpacity(
-                                            0.18,
-                                          ),
+                                              _gold.withOpacity(0.18),
                                           color: _gold,
                                         );
                                       },
                                     ),
                                   ),
                                   AnimatedSwitcher(
-                                    duration:
-                                        const Duration(
+                                    duration: const Duration(
                                       milliseconds: 180,
                                     ),
                                     child: Text(
                                       '${(progress * 100).round()}%',
                                       key: ValueKey(
-                                        (progress * 100)
-                                            .round(),
+                                        (progress * 100).round(),
                                       ),
-                                      style:
-                                          const TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 7,
-                                        fontWeight:
-                                            FontWeight.bold,
+                                        fontWeight: FontWeight.bold,
                                         color: _gold,
                                       ),
                                     ),
@@ -435,8 +461,7 @@ class _LectureRowState
                             : Icon(
                                 isDownloaded
                                     ? Icons.check_circle
-                                    : Icons
-                                        .download_rounded,
+                                    : Icons.download_rounded,
                                 color: _gold,
                                 size: 22,
                               ),
@@ -445,33 +470,27 @@ class _LectureRowState
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             widget.lecture.title,
                             maxLines: 2,
-                            overflow:
-                                TextOverflow.ellipsis,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 14,
                               height: 1.45,
-                              fontWeight:
-                                  FontWeight.bold,
-                              color:
-                                  AppColors.mainText,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.mainText,
                             ),
                           ),
                           const SizedBox(height: 5),
                           Text(
                             widget.lecture.section,
                             maxLines: 1,
-                            overflow:
-                                TextOverflow.ellipsis,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 10,
-                              color: AppColors
-                                  .secondaryText
+                              color: AppColors.secondaryText
                                   .withOpacity(0.8),
                             ),
                           ),
@@ -480,9 +499,7 @@ class _LectureRowState
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: () =>
-                          favoritesService
-                              .toggleFavorite(
+                      onTap: () => favoritesService.toggleFavorite(
                         widget.lecture,
                       ),
                       child: Icon(
@@ -495,14 +512,12 @@ class _LectureRowState
                     ),
                     const SizedBox(width: 12),
                     GestureDetector(
-                      onTap: () =>
-                          ShareService.shareLecture(
+                      onTap: () => ShareService.shareLecture(
                         widget.lecture,
                       ),
                       child: Icon(
                         Icons.share_outlined,
-                        color: AppColors.secondaryText
-                            .withOpacity(0.7),
+                        color: AppColors.secondaryText.withOpacity(0.7),
                         size: 20,
                       ),
                     ),
