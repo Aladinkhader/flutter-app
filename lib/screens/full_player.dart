@@ -17,6 +17,8 @@ class FullPlayerScreen extends StatefulWidget {
 
 class _FullPlayerScreenState
     extends State<FullPlayerScreen> {
+  static const Color _gold = Color(0xFFD6B56E);
+
   Timer? _refreshTimer;
 
   bool _seeking = false;
@@ -125,7 +127,7 @@ class _FullPlayerScreenState
               ),
             ),
             title: Text(
-              'المحاضرة غير متاحة حاليًا',
+              'اتصل بالإنترنت لتشغيل المحاضرة',
               textAlign: TextAlign.center,
               style: GoogleFonts.tajawal(
                 fontSize: 17,
@@ -134,9 +136,9 @@ class _FullPlayerScreenState
               ),
             ),
             content: Text(
-              'للاستماع إليها الآن، اتصل بالإنترنت. '
-              'ويمكنك تنزيل المحاضرة مسبقًا للاستماع إليها '
-              'لاحقًا دون الحاجة إلى اتصال.',
+              'للإستماع إلى المحاضرة الآن، يرجى الاتصال بالإنترنت. '
+              'ويمكنك تنزيل المحاضرة مسبقًا للإستماع إليها لاحقًا '
+              'دون الحاجة إلى الاتصال بالإنترنت.',
               textAlign: TextAlign.center,
               style: GoogleFonts.tajawal(
                 fontSize: 12,
@@ -214,7 +216,9 @@ class _FullPlayerScreenState
           backgroundColor:
               AppColors.background,
           body: const Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator(
+              color: _gold,
+            ),
           ),
         ),
       );
@@ -310,8 +314,7 @@ class _FullPlayerScreenState
                         CircularStrokeCap.round,
                     backgroundColor:
                         AppColors.cardDark,
-                    progressColor:
-                        Colors.white,
+                    progressColor: _gold,
                     animation: false,
                     center: Container(
                       width: 200,
@@ -326,18 +329,17 @@ class _FullPlayerScreenState
                             AppColors.cardDark,
                         border:
                             Border.all(
-                          color: AppColors
-                              .primaryTeal
+                          color: _gold
                               .withOpacity(
-                            0.4,
+                            0.45,
                           ),
                           width: 3,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black
+                            color: _gold
                                 .withOpacity(
-                              0.35,
+                              0.12,
                             ),
                             blurRadius: 28,
                             offset:
@@ -410,10 +412,10 @@ class _FullPlayerScreenState
                         ? durationMs
                             .toDouble()
                         : 1,
-                    activeColor:
-                        AppColors.primaryTeal,
+                    activeColor: _gold,
                     inactiveColor:
                         AppColors.cardDark,
+                    thumbColor: _gold,
                     onChanged: (value) {
                       audioService.seek(
                         Duration(
@@ -548,8 +550,7 @@ class _FullPlayerScreenState
                     Icons.repeat_rounded,
                     color: audioService
                             .isRepeat
-                        ? AppColors
-                            .primaryTeal
+                        ? _gold
                         : AppColors
                             .secondaryText
                             .withOpacity(
@@ -617,6 +618,9 @@ class _PlayPauseButton
 
 class _PlayPauseButtonState
     extends State<_PlayPauseButton> {
+  static const Color _gold =
+      Color(0xFFD6B56E);
+
   bool _pressed = false;
 
   @override
@@ -639,11 +643,10 @@ class _PlayPauseButtonState
           height: 64,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.mainText,
+            color: _gold,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryTeal
-                    .withOpacity(0.3),
+                color: _gold.withOpacity(0.3),
                 blurRadius: 16,
                 offset:
                     const Offset(0, 6),
@@ -662,3 +665,4 @@ class _PlayPauseButtonState
     );
   }
 }
+```0
