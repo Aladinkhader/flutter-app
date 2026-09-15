@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../theme/app_colors.dart';
 import '../services/favorites_service.dart';
@@ -17,6 +19,14 @@ class SettingsTab extends StatefulWidget {
 
 class _SettingsTabState extends State<SettingsTab> {
   static const Color _gold = Color(0xFFD6B56E);
+
+  static final Uri _whatsappUrl = Uri.parse(
+    'https://wa.me/message/YK3PTTIVY4IOP1',
+  );
+
+  static final Uri _facebookUrl = Uri.parse(
+    'https://www.facebook.com/profile.php?id=100065331340861',
+  );
 
   bool _clearing = false;
 
@@ -69,6 +79,36 @@ class _SettingsTabState extends State<SettingsTab> {
     );
   }
 
+  Future<void> _openWhatsApp() async {
+    if (!await launchUrl(
+      _whatsappUrl,
+      mode: LaunchMode.externalApplication,
+    )) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تعذر فتح رابط الواتساب'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openFacebook() async {
+    if (!await launchUrl(
+      _facebookUrl,
+      mode: LaunchMode.externalApplication,
+    )) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تعذر فتح رابط الفيسبوك'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final favoritesService = FavoritesService.instance;
@@ -102,9 +142,7 @@ class _SettingsTabState extends State<SettingsTab> {
             ),
           ),
         ),
-
         const SizedBox(height: 28),
-
         _SettingsCard(
           child: _SettingsItem(
             title: 'من هو الشيخ د. محمد الأمين إسماعيل',
@@ -112,9 +150,7 @@ class _SettingsTabState extends State<SettingsTab> {
             onTap: () => showSheikhBioDialog(context),
           ),
         ),
-
         const SizedBox(height: 14),
-
         _SettingsCard(
           child: _SettingsItem(
             title: 'مشاركة التطبيق',
@@ -122,9 +158,7 @@ class _SettingsTabState extends State<SettingsTab> {
             onTap: _shareApp,
           ),
         ),
-
         const SizedBox(height: 14),
-
         _SettingsCard(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -183,9 +217,7 @@ class _SettingsTabState extends State<SettingsTab> {
             ),
           ),
         ),
-
         const SizedBox(height: 18),
-
         Row(
           children: [
             Expanded(
@@ -209,9 +241,7 @@ class _SettingsTabState extends State<SettingsTab> {
             ),
           ],
         ),
-
         const SizedBox(height: 36),
-
         Center(
           child: Column(
             children: [
@@ -248,13 +278,15 @@ class _SettingsTabState extends State<SettingsTab> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _SocialButton(
-                    icon: Icons.chat,
+                    icon: FontAwesomeIcons.whatsapp,
                     color: const Color(0xFF25D366),
+                    onTap: _openWhatsApp,
                   ),
                   const SizedBox(width: 18),
                   _SocialButton(
                     icon: Icons.facebook,
                     color: const Color(0xFF1877F2),
+                    onTap: _openFacebook,
                   ),
                 ],
               ),
@@ -397,30 +429,41 @@ class _StatCard extends StatelessWidget {
 }
 
 class _SocialButton extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final Color color;
+  final VoidCallback onTap;
 
   const _SocialButton({
     required this.icon,
     required this.color,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withOpacity(0.1),
-        border: Border.all(
-          color: color.withOpacity(0.4),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color.withOpacity(0.1),
+          border: Border.all(
+            color: color.withOpacity(0.4),
+          ),
         ),
-      ),
-      child: Icon(
-        icon,
-        color: color,
-        size: 24,
+        child: icon is FaIconData
+            ? FaIcon(
+                icon,
+                color: color,
+                size: 24,
+              )
+            : Icon(
+                icon as IconData,
+                color: color,
+                size: 24,
+              ),
       ),
     );
   }
