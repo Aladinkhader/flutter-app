@@ -10,11 +10,13 @@ class DownloadsFavoritesTab extends StatefulWidget {
   const DownloadsFavoritesTab({super.key});
 
   @override
-  State<DownloadsFavoritesTab> createState() => _DownloadsFavoritesTabState();
+  State<DownloadsFavoritesTab> createState() =>
+      _DownloadsFavoritesTabState();
 }
 
-class _DownloadsFavoritesTabState extends State<DownloadsFavoritesTab> {
-  int _subTab = 0; // 0 = تنزيلات، 1 = مفضلة
+class _DownloadsFavoritesTabState
+    extends State<DownloadsFavoritesTab> {
+  int _subTab = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +50,12 @@ class _DownloadsFavoritesTabState extends State<DownloadsFavoritesTab> {
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
             child: _subTab == 0
-                ? const _DownloadsList(key: ValueKey('downloads'))
-                : const _FavoritesList(key: ValueKey('favorites')),
+                ? const _DownloadsList(
+                    key: ValueKey('downloads'),
+                  )
+                : const _FavoritesList(
+                    key: ValueKey('favorites'),
+                  ),
           ),
         ),
       ],
@@ -90,11 +96,13 @@ class _SubTabButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 16,
-                color: selected
-                    ? AppColors.mainText
-                    : AppColors.secondaryText.withOpacity(0.5)),
+            Icon(
+              icon,
+              size: 16,
+              color: selected
+                  ? AppColors.mainText
+                  : AppColors.secondaryText.withOpacity(0.5),
+            ),
             const SizedBox(width: 6),
             Text(
               label,
@@ -126,10 +134,11 @@ class _DownloadsList extends StatelessWidget {
         final downloads = downloadsService.downloads;
 
         if (downloads.isEmpty) {
-          return _EmptyState(
+          return const _EmptyState(
             icon: Icons.download_rounded,
             title: 'لا توجد محاضرات محملة',
-            subtitle: 'قم بتنزيل المحاضرات من خلال الضغط على علامة التحميل',
+            subtitle:
+                'قم بتنزيل المحاضرات من خلال الضغط على علامة التحميل',
           );
         }
 
@@ -138,9 +147,12 @@ class _DownloadsList extends StatelessWidget {
           itemCount: downloads.length,
           itemBuilder: (context, index) {
             final item = downloads[index];
+
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: _DownloadRow(lecture: item.lecture),
+              child: _DownloadRow(
+                lecture: item,
+              ),
             );
           },
         );
@@ -151,7 +163,10 @@ class _DownloadsList extends StatelessWidget {
 
 class _DownloadRow extends StatelessWidget {
   final Lecture lecture;
-  const _DownloadRow({required this.lecture});
+
+  const _DownloadRow({
+    required this.lecture,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +176,8 @@ class _DownloadRow extends StatelessWidget {
       animation: audioService,
       builder: (context, _) {
         final isThisPlaying =
-            audioService.currentLecture?.audioUrl == lecture.audioUrl &&
+            audioService.currentLecture?.audioUrl ==
+                    lecture.audioUrl &&
                 audioService.isPlaying;
 
         return Container(
@@ -179,10 +195,15 @@ class _DownloadRow extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: () {
-                  AudioPlayerService.instance
-                      .playLecture(lecture, queue: [lecture]);
+                  AudioPlayerService.instance.playLecture(
+                    lecture,
+                    queue: [lecture],
+                  );
+
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const FullPlayerScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const FullPlayerScreen(),
+                    ),
                   );
                 },
                 child: Icon(
@@ -219,11 +240,14 @@ class _DownloadRow extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(
-                      color: AppColors.primaryTeal.withOpacity(0.4)),
+                    color: AppColors.primaryTeal.withOpacity(0.4),
+                  ),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -238,8 +262,11 @@ class _DownloadRow extends StatelessWidget {
               IconButton(
                 onPressed: () =>
                     DownloadsService.instance.deleteDownload(lecture),
-                icon: const Icon(Icons.delete_outline,
-                    color: Colors.redAccent, size: 20),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.redAccent,
+                  size: 20,
+                ),
               ),
             ],
           ),
@@ -262,10 +289,11 @@ class _FavoritesList extends StatelessWidget {
         final favorites = favoritesService.favorites;
 
         if (favorites.isEmpty) {
-          return _EmptyState(
+          return const _EmptyState(
             icon: Icons.bookmark_border,
             title: 'لا توجد مفضلة',
-            subtitle: 'أضف المحاضرات إلى المفضلة للرجوع إليها لاحقاً',
+            subtitle:
+                'أضف المحاضرات إلى المفضلة للرجوع إليها لاحقاً',
           );
         }
 
@@ -274,9 +302,12 @@ class _FavoritesList extends StatelessWidget {
           itemCount: favorites.length,
           itemBuilder: (context, index) {
             final lecture = favorites[index];
+
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: _FavoriteRow(lecture: lecture),
+              child: _FavoriteRow(
+                lecture: lecture,
+              ),
             );
           },
         );
@@ -287,7 +318,10 @@ class _FavoritesList extends StatelessWidget {
 
 class _FavoriteRow extends StatelessWidget {
   final Lecture lecture;
-  const _FavoriteRow({required this.lecture});
+
+  const _FavoriteRow({
+    required this.lecture,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +331,8 @@ class _FavoriteRow extends StatelessWidget {
       animation: audioService,
       builder: (context, _) {
         final isThisPlaying =
-            audioService.currentLecture?.audioUrl == lecture.audioUrl &&
+            audioService.currentLecture?.audioUrl ==
+                    lecture.audioUrl &&
                 audioService.isPlaying;
 
         return Container(
@@ -315,10 +350,15 @@ class _FavoriteRow extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: () {
-                  AudioPlayerService.instance
-                      .playLecture(lecture, queue: [lecture]);
+                  AudioPlayerService.instance.playLecture(
+                    lecture,
+                    queue: [lecture],
+                  );
+
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const FullPlayerScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const FullPlayerScreen(),
+                    ),
                   );
                 },
                 child: Icon(
@@ -357,8 +397,11 @@ class _FavoriteRow extends StatelessWidget {
               IconButton(
                 onPressed: () =>
                     FavoritesService.instance.removeFavorite(lecture),
-                icon: const Icon(Icons.delete_outline,
-                    color: Colors.redAccent, size: 20),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.redAccent,
+                  size: 20,
+                ),
               ),
             ],
           ),
@@ -388,16 +431,20 @@ class _EmptyState extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.cardDark,
             ),
-            child: Icon(icon, color: AppColors.primaryTeal, size: 28),
+            child: Icon(
+              icon,
+              color: AppColors.primaryTeal,
+              size: 28,
+            ),
           ),
           const SizedBox(height: 14),
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.mainText,
               fontWeight: FontWeight.bold,
               fontSize: 13,
@@ -410,8 +457,9 @@ class _EmptyState extends StatelessWidget {
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: AppColors.secondaryText.withOpacity(0.7),
-                  fontSize: 11),
+                color: AppColors.secondaryText.withOpacity(0.7),
+                fontSize: 11,
+              ),
             ),
           ),
         ],
@@ -419,3 +467,4 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
+```0
