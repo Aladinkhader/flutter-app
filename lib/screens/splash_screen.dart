@@ -7,15 +7,25 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  State<SplashScreen> createState() =>
+      _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState
+    extends State<SplashScreen>
+    with TickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnim;
   late final Animation<double> _fadeAnim;
+
+  late final AnimationController _textController;
   late final AnimationController _shimmerController;
+
+  static const Color _gold =
+      Color(0xFFD6B56E);
+
+  static const String _title =
+      'الشيخ د. محمد الأمين إسماعيل';
 
   @override
   void initState() {
@@ -23,44 +33,92 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration:
+          const Duration(milliseconds: 1200),
     );
 
-    _scaleAnim = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    _scaleAnim =
+        Tween<double>(
+      begin: 0.6,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutBack,
+      ),
     );
 
-    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    _fadeAnim =
+        Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeIn,
+      ),
     );
 
-    _shimmerController = AnimationController(
+    _textController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration:
+          const Duration(milliseconds: 850),
+    );
+
+    _shimmerController =
+        AnimationController(
+      vsync: this,
+      duration:
+          const Duration(milliseconds: 900),
     );
 
     _controller.forward();
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _shimmerController.forward();
-    });
 
-    Future.delayed(const Duration(milliseconds: 1600), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 500),
-            pageBuilder: (_, anim, __) => const MainShell(),
-            transitionsBuilder: (_, anim, __, child) =>
-                FadeTransition(opacity: anim, child: child),
-          ),
-        );
-      }
-    });
+    Future.delayed(
+      const Duration(milliseconds: 350),
+      () {
+        if (mounted) {
+          _textController.forward();
+        }
+      },
+    );
+
+    Future.delayed(
+      const Duration(milliseconds: 1250),
+      () {
+        if (mounted) {
+          _shimmerController.forward();
+        }
+      },
+    );
+
+    Future.delayed(
+      const Duration(milliseconds: 1900),
+      () {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              transitionDuration:
+                  const Duration(milliseconds: 500),
+              pageBuilder: (_, anim, __) =>
+                  const MainShell(),
+              transitionsBuilder:
+                  (_, anim, __, child) =>
+                      FadeTransition(
+                opacity: anim,
+                child: child,
+              ),
+            ),
+          );
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _textController.dispose();
     _shimmerController.dispose();
     super.dispose();
   }
@@ -68,49 +126,91 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.veryDarkBackground,
+      backgroundColor:
+          AppColors.veryDarkBackground,
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnim,
           child: ScaleTransition(
             scale: _scaleAnim,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize:
+                  MainAxisSize.min,
               children: [
                 _PulsingAvatar(),
                 const SizedBox(height: 24),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 24,
+                  ),
                   child: AnimatedBuilder(
-                    animation: _shimmerController,
-                    builder: (context, child) {
+                    animation: Listenable.merge([
+                      _textController,
+                      _shimmerController,
+                    ]),
+                    builder:
+                        (context, child) {
+                      final visibleCount =
+                          (_textController.value *
+                                  _title.length)
+                              .floor()
+                              .clamp(
+                                0,
+                                _title.length,
+                              );
+
+                      final visibleText =
+                          _title.substring(
+                        0,
+                        visibleCount,
+                      );
+
                       return ShaderMask(
                         shaderCallback: (bounds) {
-                          final t = _shimmerController.value;
+                          final shimmer =
+                              _shimmerController.value;
+
                           return LinearGradient(
-                            colors: [
+                            colors: const [
                               AppColors.mainText,
-                              Colors.white,
+                              _gold,
                               AppColors.mainText,
                             ],
-                            stops: const [0.35, 0.5, 0.65],
-                            begin: Alignment(-1.5 + 3 * t, 0),
-                            end: Alignment(-0.5 + 3 * t, 0),
+                            stops: const [
+                              0.0,
+                              0.5,
+                              1.0,
+                            ],
+                            begin: Alignment(
+                              -2.0 +
+                                  (4.0 * shimmer),
+                              0,
+                            ),
+                            end: Alignment(
+                              -1.0 +
+                                  (4.0 * shimmer),
+                              0,
+                            ),
                           ).createShader(bounds);
                         },
-                        child: child,
+                        blendMode: BlendMode.srcIn,
+                        child: Text(
+                          visibleText,
+                          textAlign:
+                              TextAlign.center,
+                          style:
+                              GoogleFonts.tajawal(
+                            fontSize: 23,
+                            fontWeight:
+                                FontWeight.w900,
+                            color:
+                                AppColors.mainText,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       );
                     },
-                    child: Text(
-                      'الشيخ د. محمد الأمين إسماعيل',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.tajawal(
-                        fontSize: 23,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.mainText,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -124,19 +224,28 @@ class _SplashScreenState extends State<SplashScreen>
 
 class _PulsingAvatar extends StatefulWidget {
   @override
-  State<_PulsingAvatar> createState() => _PulsingAvatarState();
+  State<_PulsingAvatar> createState() =>
+      _PulsingAvatarState();
 }
 
-class _PulsingAvatarState extends State<_PulsingAvatar>
+class _PulsingAvatarState
+    extends State<_PulsingAvatar>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _pulseController;
+  late final AnimationController
+      _pulseController;
+
+  static const Color _gold =
+      Color(0xFFD6B56E);
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
+
+    _pulseController =
+        AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
+      duration:
+          const Duration(seconds: 2),
     )..repeat();
   }
 
@@ -157,18 +266,27 @@ class _PulsingAvatarState extends State<_PulsingAvatar>
           AnimatedBuilder(
             animation: _pulseController,
             builder: (_, __) {
-              final value = _pulseController.value;
+              final value =
+                  _pulseController.value;
+
               return Opacity(
-                opacity: (1 - value).clamp(0.0, 1.0),
+                opacity:
+                    (1 - value).clamp(
+                  0.0,
+                  1.0,
+                ),
                 child: Transform.scale(
-                  scale: 1.0 + (value * 0.3),
+                  scale:
+                      1.0 + (value * 0.3),
                   child: Container(
                     width: 144,
                     height: 144,
-                    decoration: BoxDecoration(
+                    decoration:
+                        BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.primaryTeal.withOpacity(0.4),
+                        color: _gold
+                            .withOpacity(0.4),
                         width: 2,
                       ),
                     ),
@@ -180,16 +298,25 @@ class _PulsingAvatarState extends State<_PulsingAvatar>
           Container(
             width: 144,
             height: 144,
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
+            padding:
+                const EdgeInsets.all(4),
+            decoration:
+                BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.cardDark,
-              border: Border.all(color: AppColors.cardGradientStart, width: 4),
+              border: Border.all(
+                color: _gold,
+                width: 4,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
+                  color:
+                      Colors.black.withOpacity(
+                    0.4,
+                  ),
                   blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  offset:
+                      const Offset(0, 8),
                 ),
               ],
             ),
