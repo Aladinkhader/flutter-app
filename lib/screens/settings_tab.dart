@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import '../services/cache_service.dart';
 import '../theme/app_colors.dart';
-import '../services/favorites_service.dart';
-import '../services/downloads_service.dart';
-import '../services/archive_service.dart';
-import 'sheikh_bio_dialog.dart';
-import '../widgets/glow_border.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -20,322 +14,304 @@ class SettingsTab extends StatefulWidget {
 class _SettingsTabState extends State<SettingsTab> {
   static const Color _gold = Color(0xFFD6B56E);
 
-  static final Uri _whatsappUrl = Uri.parse(
-    'https://wa.me/message/YK3PTTIVY4IOP1',
-  );
-
-  static final Uri _facebookUrl = Uri.parse(
-    'https://www.facebook.com/profile.php?id=100065331340861',
-  );
-
   bool _clearing = false;
+  double _clearProgress = 0;
 
   Future<void> _clearCache() async {
-    setState(() => _clearing = true);
+    if (_clearing) return;
 
-    await ArchiveService.clearCache();
+    setState(() {
+      _clearing = true;
+      _clearProgress = 0;
+    });
 
-    if (!mounted) return;
+    try {
+      for (int i = 1; i <= 10; i++) {
+        await Future.delayed(const Duration(milliseconds: 80));
 
-    setState(() => _clearing = false);
+        if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.cardDark,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: AppColors.primaryTeal.withOpacity(0.3),
-          ),
-        ),
-        content: const Row(
-          children: [
-            Icon(
-              Icons.check_circle,
-              color: AppColors.primaryTeal,
-              size: 20,
-            ),
-            SizedBox(width: 8),
-            Text(
-              'تم محو الذاكرة المؤقتة',
-              style: TextStyle(
-                color: AppColors.mainText,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+        setState(() {
+          _clearProgress = i / 10;
+        });
+      }
 
-  Future<void> _shareApp() async {
-    await Share.share(
-      'تطبيق الشيخ د. محمد الأمين إسماعيل\n\n'
-      'استمع إلى محاضرات الشيخ واستفد من مكتبته الصوتية.\n\n'
-      'شارك التطبيق مع من تحب.',
-      subject: 'تطبيق الشيخ د. محمد الأمين إسماعيل',
-    );
-  }
+      await CacheService.clearCache();
 
-  Future<void> _openWhatsApp() async {
-    if (!await launchUrl(
-      _whatsappUrl,
-      mode: LaunchMode.externalApplication,
-    )) {
       if (!mounted) return;
+
+      setState(() {
+        _clearing = false;
+        _clearProgress = 1;
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('تعذر فتح رابط الواتساب'),
+          content: Text('تم تنظيف الملفات المؤقتة بنجاح'),
         ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _clearing = false;
+        _clearProgress = 0;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('حدث خطأ أثناء تنظيف الملفات المؤقتة'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openWhatsApp() async {
+    final uri = Uri.parse(
+      'https://wa.me/message/YK3PTTIVY4IOP1',
+    );
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
       );
     }
   }
 
   Future<void> _openFacebook() async {
-    if (!await launchUrl(
-      _facebookUrl,
-      mode: LaunchMode.externalApplication,
-    )) {
-      if (!mounted) return;
+    final uri = Uri.parse(
+      'https://www.facebook.com/profile.php?id=100065331340861',
+    );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تعذر فتح رابط الفيسبوك'),
-        ),
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
       );
     }
   }
 
+  Future<void> _shareApp() async {
+    await Share.share(
+      'تطبيق الشيخ د. محمد الأمين إسماعيل',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final favoritesService = FavoritesService.instance;
-    final downloadsService = DownloadsService.instance;
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-      children: [
-        Center(
-          child: AnimatedGlowBorder(
-            borderRadius: BorderRadius.circular(95),
-            borderWidth: 3,
-            child: Container(
-              width: 190,
-              height: 190,
+    return Scaffold(
+      backgroundColor: AppColors.veryDarkBackground,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'الإعدادات',
+          style: TextStyle(
+            color: AppColors.mainText,
+            fontWeight: FontWeight.w900,
+            fontSize: 21,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
+                color: AppColors.cardDark,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: _gold.withOpacity(0.22),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 20,
+                    color: Colors.black.withOpacity(0.18),
+                    blurRadius: 18,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/images/sheikh.jpg',
-                  fit: BoxFit.cover,
-                ),
+              child: Column(
+                children: [
+                  Text(
+                    'الشيخ د. محمد الأمين إسماعيل',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.mainText,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'تطبيق المحاضرات والدروس',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.secondaryText,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'تطبيق يتيح لك الاستماع إلى محاضرات الشيخ '
+                    'د. محمد الأمين إسماعيل وتنزيلها للاستماع '
+                    'إليها دون اتصال بالإنترنت.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.secondaryText,
+                      height: 1.7,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ),
-        const SizedBox(height: 28),
-        _SettingsCard(
-          child: _SettingsItem(
-            title: 'من هو الشيخ د. محمد الأمين إسماعيل',
-            icon: Icons.info_outline,
-            onTap: () => showSheikhBioDialog(context),
-          ),
-        ),
-        const SizedBox(height: 14),
-        _SettingsCard(
-          child: _SettingsItem(
-            title: 'مشاركة التطبيق',
-            icon: Icons.share_outlined,
-            onTap: _shareApp,
-          ),
-        ),
-        const SizedBox(height: 14),
-        _SettingsCard(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+
+            const SizedBox(height: 20),
+
+            _SettingsItem(
+              icon: Icons.share_outlined,
+              title: 'مشاركة التطبيق',
+              onTap: _shareApp,
+            ),
+
+            const SizedBox(height: 10),
+
+            _SettingsItem(
+              icon: Icons.delete_outline,
+              title: _clearing
+                  ? 'جاري تنظيف الملفات...'
+                  : 'تنظيف الملفات المؤقتة',
+              onTap: _clearing ? null : _clearCache,
+              trailing: _clearing
+                  ? SizedBox(
+                      width: 30,
+                      height: 30,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            value: _clearProgress,
+                            strokeWidth: 2.5,
+                            color: _gold,
+                          ),
+                          Text(
+                            '${(_clearProgress * 100).round()}',
+                            style: const TextStyle(
+                              color: _gold,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : null,
+            ),
+
+            const SizedBox(height: 28),
+
+            Text(
+              'تواصل مع الشيخ',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.mainText,
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'محو ذاكرة التخزين المؤقت',
-                        style: TextStyle(
-                          color: AppColors.mainText,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'لفتح أسرع حتى مع ضعف الإنترنت، يحتفظ التطبيق بآخر نسخة من المحاضرات. امسحها فقط إذا أضيفت محاضرات جديدة ولم تظهر بعد.',
-                        style: TextStyle(
-                          color: AppColors.secondaryText.withOpacity(0.8),
-                          fontSize: 12,
-                          height: 1.6,
-                        ),
-                      ),
-                    ],
+                  child: _SocialButton(
+                    icon: Icons.chat,
+                    title: 'واتساب',
+                    onTap: _openWhatsApp,
+                    iconColor: const Color(0xFF25D366),
                   ),
                 ),
                 const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: _clearing ? null : _clearCache,
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: const BoxDecoration(
-                      color: AppColors.background,
-                      shape: BoxShape.circle,
-                    ),
-                    child: _clearing
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: _gold,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.delete_sweep_outlined,
-                            color: _gold,
-                            size: 26,
-                          ),
+                Expanded(
+                  child: _SocialButton(
+                    icon: Icons.facebook,
+                    title: 'فيسبوك',
+                    onTap: _openFacebook,
+                    iconColor: const Color(0xFF1877F2),
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: AnimatedBuilder(
-                animation: favoritesService,
-                builder: (context, _) => _StatCard(
-                  label: 'المفضلة',
-                  value: favoritesService.favorites.length.toString(),
-                ),
+
+            const SizedBox(height: 10),
+
+            Text(
+              'مراسلة علاء الدين للتصميم عبر واتساب',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.secondaryText,
+                fontSize: 13,
               ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: AnimatedBuilder(
-                animation: downloadsService,
-                builder: (context, _) => _StatCard(
-                  label: 'التنزيلات',
-                  value: downloadsService.downloads.length.toString(),
-                ),
+
+            const SizedBox(height: 30),
+
+            Text(
+              'تطوير',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.secondaryText,
+                fontSize: 13,
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
+            Text(
+              'علاء الدين خضر',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _gold,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              'Developed by Alaa Al-Din Khader',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.secondaryText,
+                fontSize: 12,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 36),
-        Center(
-          child: Column(
-            children: [
-              Text(
-                'تطوير',
-                style: TextStyle(
-                  color: AppColors.mainText,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _AnimatedShimmerText(
-                text: 'علاء الدين خضر',
-                style: const TextStyle(
-                  color: AppColors.mainText,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'تواصل معي',
-                style: TextStyle(
-                  color: AppColors.secondaryText,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _SocialButton(
-                    icon: FontAwesomeIcons.whatsapp,
-                    color: const Color(0xFF25D366),
-                    onTap: _openWhatsApp,
-                  ),
-                  const SizedBox(width: 18),
-                  _SocialButton(
-                    icon: Icons.facebook,
-                    color: const Color(0xFF1877F2),
-                    onTap: _openFacebook,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  final Widget child;
-
-  const _SettingsCard({
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardDark,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.cardGradientStart.withOpacity(0.4),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
       ),
-      child: child,
     );
   }
 }
 
 class _SettingsItem extends StatefulWidget {
-  final String title;
   final IconData icon;
-  final VoidCallback onTap;
+  final String title;
+  final VoidCallback? onTap;
+  final Widget? trailing;
 
   const _SettingsItem({
-    required this.title,
     required this.icon,
+    required this.title,
     required this.onTap,
+    this.trailing,
   });
 
   @override
@@ -343,206 +319,116 @@ class _SettingsItem extends StatefulWidget {
 }
 
 class _SettingsItemState extends State<_SettingsItem> {
-  bool _pressed = false;
-
-  static const Color _gold = Color(0xFFD6B56E);
+  bool pressed = false;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
+      onTapDown: (_) => setState(() => pressed = true),
+      onTapCancel: () => setState(() => pressed = false),
+      onTapUp: (_) => setState(() => pressed = false),
       onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        color: _pressed
-            ? const Color(0xFF165652)
-            : Colors.transparent,
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                widget.title,
-                style: const TextStyle(
-                  color: AppColors.mainText,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+      child: AnimatedScale(
+        scale: pressed ? 0.98 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 16,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.cardDark,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFFD6B56E).withOpacity(0.14),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                widget.icon,
+                color: const Color(0xFFD6B56E),
+                size: 23,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: TextStyle(
+                    color: AppColors.mainText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
-            Icon(
-              widget.icon,
-              color: _gold,
-              size: 22,
-            ),
-          ],
+              if (widget.trailing != null) widget.trailing!,
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18),
-      decoration: BoxDecoration(
-        color: AppColors.cardDark,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.cardGradientStart.withOpacity(0.4),
-        ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.secondaryText,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.mainText,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SocialButton extends StatelessWidget {
-  final dynamic icon;
-  final Color color;
+class _SocialButton extends StatefulWidget {
+  final IconData icon;
+  final String title;
   final VoidCallback onTap;
+  final Color iconColor;
 
   const _SocialButton({
     required this.icon,
-    required this.color,
+    required this.title,
     required this.onTap,
+    required this.iconColor,
   });
+
+  @override
+  State<_SocialButton> createState() => _SocialButtonState();
+}
+
+class _SocialButtonState extends State<_SocialButton> {
+  bool pressed = false;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color.withOpacity(0.1),
-          border: Border.all(
-            color: color.withOpacity(0.4),
+      onTapDown: (_) => setState(() => pressed = true),
+      onTapCancel: () => setState(() => pressed = false),
+      onTapUp: (_) => setState(() => pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: pressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          decoration: BoxDecoration(
+            color: AppColors.cardDark,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: widget.iconColor.withOpacity(0.18),
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                widget.icon,
+                color: widget.iconColor,
+                size: 28,
+              ),
+              const SizedBox(height: 7),
+              Text(
+                widget.title,
+                style: TextStyle(
+                  color: AppColors.mainText,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
           ),
         ),
-        child: icon is FaIconData
-            ? FaIcon(
-                icon,
-                color: color,
-                size: 24,
-              )
-            : Icon(
-                icon as IconData,
-                color: color,
-                size: 24,
-              ),
       ),
-    );
-  }
-}
-
-class _AnimatedShimmerText extends StatefulWidget {
-  final String text;
-  final TextStyle style;
-
-  const _AnimatedShimmerText({
-    required this.text,
-    required this.style,
-  });
-
-  @override
-  State<_AnimatedShimmerText> createState() =>
-      _AnimatedShimmerTextState();
-}
-
-class _AnimatedShimmerTextState
-    extends State<_AnimatedShimmerText>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (bounds) {
-            final position =
-                2.0 - (_controller.value * 4.0);
-
-            return const LinearGradient(
-              colors: [
-                AppColors.mainText,
-                Color(0xFFD6B56E),
-                AppColors.mainText,
-              ],
-              stops: [
-                0.0,
-                0.5,
-                1.0,
-              ],
-            ).createShader(
-              Rect.fromLTWH(
-                position * bounds.width,
-                0,
-                bounds.width,
-                bounds.height,
-              ),
-            );
-          },
-          child: Text(
-            widget.text,
-            style: widget.style,
-            textAlign: TextAlign.center,
-            textDirection: TextDirection.rtl,
-          ),
-        );
-      },
     );
   }
 }
