@@ -16,6 +16,8 @@ class SettingsTab extends StatefulWidget {
 }
 
 class _SettingsTabState extends State<SettingsTab> {
+  static const Color _gold = Color(0xFFD6B56E);
+
   bool _clearing = false;
 
   Future<void> _clearCache() async {
@@ -37,15 +39,15 @@ class _SettingsTabState extends State<SettingsTab> {
             color: AppColors.primaryTeal.withOpacity(0.3),
           ),
         ),
-        content: Row(
+        content: const Row(
           children: [
             Icon(
               Icons.check_circle,
               color: AppColors.primaryTeal,
               size: 20,
             ),
-            const SizedBox(width: 8),
-            const Text(
+            SizedBox(width: 8),
+            Text(
               'تم محو الذاكرة المؤقتة',
               style: TextStyle(
                 color: AppColors.mainText,
@@ -100,9 +102,9 @@ class _SettingsTabState extends State<SettingsTab> {
             ),
           ),
         ),
+
         const SizedBox(height: 28),
 
-        // من هو الشيخ
         _SettingsCard(
           child: _SettingsItem(
             title: 'من هو الشيخ د. محمد الأمين إسماعيل',
@@ -113,7 +115,6 @@ class _SettingsTabState extends State<SettingsTab> {
 
         const SizedBox(height: 14),
 
-        // مشاركة التطبيق
         _SettingsCard(
           child: _SettingsItem(
             title: 'مشاركة التطبيق',
@@ -124,7 +125,6 @@ class _SettingsTabState extends State<SettingsTab> {
 
         const SizedBox(height: 14),
 
-        // محو الكاش
         _SettingsCard(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -134,7 +134,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'محو ذاكرة التخزين المؤقت',
                         style: TextStyle(
                           color: AppColors.mainText,
@@ -146,8 +146,7 @@ class _SettingsTabState extends State<SettingsTab> {
                       Text(
                         'لفتح أسرع حتى مع ضعف الإنترنت، يحتفظ التطبيق بآخر نسخة من المحاضرات. امسحها فقط إذا أضيفت محاضرات جديدة ولم تظهر بعد.',
                         style: TextStyle(
-                          color:
-                              AppColors.secondaryText.withOpacity(0.8),
+                          color: AppColors.secondaryText.withOpacity(0.8),
                           fontSize: 12,
                           height: 1.6,
                         ),
@@ -160,22 +159,22 @@ class _SettingsTabState extends State<SettingsTab> {
                   onTap: _clearing ? null : _clearCache,
                   child: Container(
                     padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.background,
                       shape: BoxShape.circle,
                     ),
                     child: _clearing
-                        ? SizedBox(
+                        ? const SizedBox(
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
-                              color: AppColors.primaryTeal,
+                              color: _gold,
                             ),
                           )
-                        : Icon(
+                        : const Icon(
                             Icons.delete_sweep_outlined,
-                            color: AppColors.primaryTeal,
+                            color: _gold,
                             size: 26,
                           ),
                   ),
@@ -187,7 +186,6 @@ class _SettingsTabState extends State<SettingsTab> {
 
         const SizedBox(height: 18),
 
-        // الإحصائيات
         Row(
           children: [
             Expanded(
@@ -195,8 +193,7 @@ class _SettingsTabState extends State<SettingsTab> {
                 animation: favoritesService,
                 builder: (context, _) => _StatCard(
                   label: 'المفضلة',
-                  value:
-                      favoritesService.favorites.length.toString(),
+                  value: favoritesService.favorites.length.toString(),
                 ),
               ),
             ),
@@ -206,8 +203,7 @@ class _SettingsTabState extends State<SettingsTab> {
                 animation: downloadsService,
                 builder: (context, _) => _StatCard(
                   label: 'التنزيلات',
-                  value:
-                      downloadsService.downloads.length.toString(),
+                  value: downloadsService.downloads.length.toString(),
                 ),
               ),
             ),
@@ -229,9 +225,6 @@ class _SettingsTabState extends State<SettingsTab> {
                 ),
               ),
               const SizedBox(height: 8),
-
-              // نفس تأثير اللمعان القديم،
-              // مع اللون الذهبي واتجاه يبدأ من حرف "ع"
               _AnimatedShimmerText(
                 text: 'علاء الدين خضر',
                 style: const TextStyle(
@@ -240,9 +233,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-
               const SizedBox(height: 18),
-
               Text(
                 'تواصل معي',
                 style: TextStyle(
@@ -252,9 +243,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   letterSpacing: 2,
                 ),
               ),
-
               const SizedBox(height: 12),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -324,6 +313,8 @@ class _SettingsItem extends StatefulWidget {
 class _SettingsItemState extends State<_SettingsItem> {
   bool _pressed = false;
 
+  static const Color _gold = Color(0xFFD6B56E);
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -351,7 +342,7 @@ class _SettingsItemState extends State<_SettingsItem> {
             ),
             Icon(
               widget.icon,
-              color: AppColors.primaryTeal,
+              color: _gold,
               size: 22,
             ),
           ],
@@ -435,7 +426,6 @@ class _SocialButton extends StatelessWidget {
   }
 }
 
-// نفس تأثير اللمعان القديم على الاسم
 class _AnimatedShimmerText extends StatefulWidget {
   final String text;
   final TextStyle style;
@@ -450,7 +440,8 @@ class _AnimatedShimmerText extends StatefulWidget {
       _AnimatedShimmerTextState();
 }
 
-class _AnimatedShimmerTextState extends State<_AnimatedShimmerText>
+class _AnimatedShimmerTextState
+    extends State<_AnimatedShimmerText>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
@@ -478,25 +469,28 @@ class _AnimatedShimmerTextState extends State<_AnimatedShimmerText>
         return ShaderMask(
           blendMode: BlendMode.srcIn,
           shaderCallback: (bounds) {
-            // يبدأ اللمعان من جهة بداية الاسم العربي
-            // ثم يتحرك باتجاه بقية الاسم.
             final position =
                 2.0 - (_controller.value * 4.0);
 
-            return LinearGradient(
-              colors: const [
+            return const LinearGradient(
+              colors: [
                 AppColors.mainText,
                 Color(0xFFD6B56E),
                 AppColors.mainText,
               ],
-              stops: const [
+              stops: [
                 0.0,
                 0.5,
                 1.0,
               ],
-              begin: Alignment(position, 0.0),
-              end: Alignment(position + 1.0, 0.0),
-            ).createShader(bounds);
+            ).createShader(
+              Rect.fromLTWH(
+                position * bounds.width,
+                0,
+                bounds.width,
+                bounds.height,
+              ),
+            );
           },
           child: Text(
             widget.text,
