@@ -25,6 +25,8 @@ class _FullPlayerScreenState
   bool _checkingAvailability = true;
   bool _blocked = false;
 
+  static const Color _gold = Color(0xFFD6B56E);
+
   @override
   void initState() {
     super.initState();
@@ -263,18 +265,17 @@ class _FullPlayerScreenState
                       onPressed: () =>
                           Navigator.of(context)
                               .pop(),
-                      icon: Icon(
-                        Icons
-                            .arrow_forward_ios,
-                        color:
-                            AppColors
-                                .secondaryText,
+                      icon: const Icon(
+                        Icons.arrow_forward_ios,
+                        color: _gold,
                         size: 18,
                       ),
                     ),
                   ],
                 ),
+
                 const Spacer(),
+
                 GestureDetector(
                   onPanStart: (_) =>
                       setState(
@@ -310,8 +311,7 @@ class _FullPlayerScreenState
                         CircularStrokeCap.round,
                     backgroundColor:
                         AppColors.cardDark,
-                    progressColor:
-                        Colors.white,
+                    progressColor: _gold,
                     animation: false,
                     center: Container(
                       width: 200,
@@ -326,18 +326,15 @@ class _FullPlayerScreenState
                             AppColors.cardDark,
                         border:
                             Border.all(
-                          color: AppColors
-                              .primaryTeal
-                              .withOpacity(
-                            0.4,
-                          ),
+                          color: _gold
+                              .withOpacity(0.7),
                           width: 3,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black
+                            color: _gold
                                 .withOpacity(
-                              0.35,
+                              0.18,
                             ),
                             blurRadius: 28,
                             offset:
@@ -357,7 +354,9 @@ class _FullPlayerScreenState
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 28),
+
                 Text(
                   lecture?.title ?? '',
                   textAlign:
@@ -374,7 +373,9 @@ class _FullPlayerScreenState
                         AppColors.mainText,
                   ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Text(
                   lecture?.section ?? '',
                   style:
@@ -385,7 +386,9 @@ class _FullPlayerScreenState
                             .secondaryText,
                   ),
                 ),
+
                 const Spacer(),
+
                 SliderTheme(
                   data:
                       SliderTheme.of(context)
@@ -394,6 +397,10 @@ class _FullPlayerScreenState
                     thumbShape:
                         const RoundSliderThumbShape(
                       enabledThumbRadius: 6,
+                    ),
+                    overlayShape:
+                        const RoundSliderOverlayShape(
+                      overlayRadius: 14,
                     ),
                   ),
                   child: Slider(
@@ -410,10 +417,14 @@ class _FullPlayerScreenState
                         ? durationMs
                             .toDouble()
                         : 1,
-                    activeColor:
-                        AppColors.primaryTeal,
+                    activeColor: _gold,
                     inactiveColor:
                         AppColors.cardDark,
+                    thumbColor: _gold,
+                    overlayColor:
+                        WidgetStatePropertyAll(
+                      _gold.withOpacity(0.15),
+                    ),
                     onChanged: (value) {
                       audioService.seek(
                         Duration(
@@ -424,6 +435,7 @@ class _FullPlayerScreenState
                     },
                   ),
                 ),
+
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(
@@ -459,7 +471,9 @@ class _FullPlayerScreenState
                     ],
                   ),
                 ),
+
                 const SizedBox(height: 12),
+
                 Row(
                   mainAxisAlignment:
                       MainAxisAlignment.center,
@@ -476,46 +490,47 @@ class _FullPlayerScreenState
                             .skip_previous_rounded,
                         color: audioService
                                 .hasPrevious
-                            ? AppColors
-                                .secondaryText
-                            : AppColors
-                                .secondaryText
-                                .withOpacity(
-                              0.3,
-                            ),
+                            ? _gold
+                            : _gold.withOpacity(
+                                0.3,
+                              ),
                         size: 26,
                       ),
                     ),
+
                     IconButton(
                       onPressed: () =>
                           audioService
                               .skipBackward(),
-                      icon: Icon(
+                      icon: const Icon(
                         Icons
                             .replay_10_rounded,
-                        color: AppColors
-                            .secondaryText,
+                        color: _gold,
                         size: 28,
                       ),
                     ),
+
                     const SizedBox(width: 12),
+
                     _PlayPauseButton(
                       audioService:
                           audioService,
                     ),
+
                     const SizedBox(width: 12),
+
                     IconButton(
                       onPressed: () =>
                           audioService
                               .skipForward(),
-                      icon: Icon(
+                      icon: const Icon(
                         Icons
                             .forward_10_rounded,
-                        color: AppColors
-                            .secondaryText,
+                        color: _gold,
                         size: 28,
                       ),
                     ),
+
                     IconButton(
                       onPressed:
                           audioService.hasNext
@@ -527,19 +542,18 @@ class _FullPlayerScreenState
                             .skip_next_rounded,
                         color: audioService
                                 .hasNext
-                            ? AppColors
-                                .secondaryText
-                            : AppColors
-                                .secondaryText
-                                .withOpacity(
-                              0.3,
-                            ),
+                            ? _gold
+                            : _gold.withOpacity(
+                                0.3,
+                              ),
                         size: 26,
                       ),
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 8),
+
                 IconButton(
                   onPressed: () =>
                       audioService
@@ -548,16 +562,14 @@ class _FullPlayerScreenState
                     Icons.repeat_rounded,
                     color: audioService
                             .isRepeat
-                        ? AppColors
-                            .primaryTeal
-                        : AppColors
-                            .secondaryText
-                            .withOpacity(
-                          0.5,
-                        ),
+                        ? _gold
+                        : _gold.withOpacity(
+                            0.5,
+                          ),
                     size: 22,
                   ),
                 ),
+
                 const SizedBox(height: 12),
               ],
             ),
@@ -619,6 +631,9 @@ class _PlayPauseButtonState
     extends State<_PlayPauseButton> {
   bool _pressed = false;
 
+  static const Color _gold =
+      Color(0xFFD6B56E);
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -642,7 +657,7 @@ class _PlayPauseButtonState
             color: AppColors.mainText,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryTeal
+                color: _gold
                     .withOpacity(0.3),
                 blurRadius: 16,
                 offset:
@@ -654,7 +669,7 @@ class _PlayPauseButtonState
             widget.audioService.isPlaying
                 ? Icons.pause_rounded
                 : Icons.play_arrow_rounded,
-            color: AppColors.background,
+            color: _gold,
             size: 34,
           ),
         ),
