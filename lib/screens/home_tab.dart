@@ -290,7 +290,8 @@ class _LectureCard extends StatefulWidget {
 class _LectureCardState extends State<_LectureCard> {
   bool _pressed = false;
 
-  static const Color _gold = Color(0xFFD6B56E);
+  static const Color _gold =
+      Color(0xFFD6B56E);
 
   void _setPressed(bool value) {
     setState(() => _pressed = value);
@@ -351,7 +352,8 @@ class _LectureCardState extends State<_LectureCard> {
         return PulsingGlow(
           active: isThisPlaying,
           child: GestureDetector(
-            onTapDown: (_) => _setPressed(true),
+            onTapDown: (_) =>
+                _setPressed(true),
             onTapUp: (_) =>
                 setState(() => _pressed = false),
             onTapCancel: () =>
@@ -429,10 +431,12 @@ class _LectureCardState extends State<_LectureCard> {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: _gold.withOpacity(0.12),
+                        color:
+                            _gold.withOpacity(0.12),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: _gold.withOpacity(0.35),
+                          color:
+                              _gold.withOpacity(0.35),
                         ),
                       ),
                       child: Icon(
@@ -585,10 +589,9 @@ class _LectureCardState extends State<_LectureCard> {
                           ShareService.shareLecture(
                         widget.lecture,
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.share_outlined,
-                        color: AppColors.secondaryText
-                            .withOpacity(0.7),
+                        color: _gold,
                         size: 20,
                       ),
                     ),
