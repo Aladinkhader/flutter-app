@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../services/archive_service.dart';
+import '../services/cache_service.dart';
 import '../theme/app_colors.dart';
 
 class SettingsTab extends StatefulWidget {
@@ -36,7 +36,7 @@ class _SettingsTabState extends State<SettingsTab> {
         });
       }
 
-      await ArchiveService.clearCache();
+      await CacheService.clearCache();
 
       if (!mounted) return;
 
